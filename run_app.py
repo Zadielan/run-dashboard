@@ -21,7 +21,7 @@ GARMIN_OAUTH2        = st.secrets["GARMIN_OAUTH2"]
 GARMIN_USER_ID       = "119995800"
 # ============================================================
 
-st.set_page_config(page_title="健康数据", page_icon="🏃", layout="wide")
+st.set_page_config(page_title="健康数据", page_icon="🏃", layout="wide", initial_sidebar_state="expanded")
 
 st.markdown("""
 <style>
@@ -206,7 +206,7 @@ Garmin健康数据：{json.dumps(garmin, ensure_ascii=False)}
 with st.sidebar:
     st.markdown("### 💪 健康助手")
     st.divider()
-    limit = st.slider("跑步记录数", 10, 50, 20)
+    limit = st.slider("跑步记录数", 10, 100, 50)
     refresh = st.button("🔄 刷新所有数据", use_container_width=True)
     if refresh:
         for key in ["runs", "garmin_data", "analysis"]:
