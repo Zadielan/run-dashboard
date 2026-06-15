@@ -359,6 +359,8 @@ with left:
 with mid:
     st.markdown("**🌙 健康数据**")
 
+    if garmin.get("error"):
+        st.error(f"Garmin 认证失败: {garmin['error']}")
     if garmin.get("errors"):
         for err in garmin["errors"]:
             st.warning(err)
