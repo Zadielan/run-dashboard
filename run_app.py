@@ -3,6 +3,8 @@ import anthropic
 import json
 import os
 import time
+import base64
+import tempfile
 import garth
 from stravalib import Client
 from datetime import date, timedelta
@@ -13,8 +15,8 @@ STRAVA_CLIENT_ID     = st.secrets["STRAVA_CLIENT_ID"]
 STRAVA_CLIENT_SECRET = st.secrets["STRAVA_CLIENT_SECRET"]
 CLAUDE_API_KEY       = st.secrets["CLAUDE_API_KEY"]
 STRAVA_REFRESH_TOKEN = st.secrets["STRAVA_REFRESH_TOKEN"]
-GARMIN_EMAIL         = st.secrets["GARMIN_EMAIL"]
-GARMIN_PASSWORD      = st.secrets["GARMIN_PASSWORD"]
+GARMIN_OAUTH1        = st.secrets["GARMIN_OAUTH1"]
+GARMIN_OAUTH2        = st.secrets["GARMIN_OAUTH2"]
 GARMIN_USER_ID       = "119995800"
 # ============================================================
 
@@ -117,7 +119,12 @@ def fetch_garmin_data():
         return st.session_state.garmin_data
 
     try:
-        garth.login(GARMIN_EMAIL, GARMIN_PASSWORD)
+        tmpdir = tempfile.mkdtemp()
+        with open(os.path.join(tmpdir, "oauth1_token.json"), "wb") as f:
+            f.write(base64.b64decode(GARMIN_OAUTH1))
+        with open(os.path.join(tmpdir, "oauth2_token.json"), "wb") as f:
+            f.write(base64.b64decode(GARMIN_OAUTH2))
+        garth.resume(tmpdir)
     except Exception as e:
         return {"error": str(e)}
 
