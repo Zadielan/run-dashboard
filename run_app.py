@@ -192,6 +192,8 @@ def fetch_runs(strava, limit=30):
         if activity.type != "Run":
             continue
         distance_km = round(float(activity.distance) / 1000, 2)
+        if not activity.moving_time or distance_km == 0:
+            continue
         duration_min = round(activity.moving_time.total_seconds() / 60, 1)
         pace = round(duration_min / distance_km, 2) if distance_km > 0 else None
         runs.append({
