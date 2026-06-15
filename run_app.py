@@ -116,6 +116,30 @@ def fetch_runs(strava, limit=30):
 # ---------- Garmin ----------
 
 GARMIN_DATA_URL = "https://raw.githubusercontent.com/Zadielan/run-dashboard/main/garmin_data.json"
+CYCLE_DATA_URL  = "https://raw.githubusercontent.com/Zadielan/run-dashboard/main/cycle_data.json"
+
+PHASE_INFO = {
+    "月经期": {
+        "emoji": "🔴", "color": "#ef4444",
+        "tip": "低能量期，适合轻松慢跑、瑜伽、散步。避免高强度训练，多补铁和水分。",
+        "hrv": "HRV 通常偏低，休息优先。"
+    },
+    "卵泡期": {
+        "emoji": "🌱", "color": "#22c55e",
+        "tip": "精力逐渐上升，适合提速训练、力量训练，这是提升成绩的好时机。",
+        "hrv": "HRV 开始回升，身体恢复力强。"
+    },
+    "排卵期": {
+        "emoji": "⚡", "color": "#f97316",
+        "tip": "精力巅峰！适合冲击配速 PR、高强度间歇，把握这个窗口期。",
+        "hrv": "HRV 通常最高，训练适应性最好。"
+    },
+    "黄体期": {
+        "emoji": "🌙", "color": "#a855f7",
+        "tip": "精力下降，体温升高，心率偏高属正常。适合中低强度，重视睡眠和蛋白质摄入。",
+        "hrv": "HRV 可能下降，不必强迫完成计划。"
+    },
+}
 
 def fetch_garmin_data():
     if "garmin_data" in st.session_state:
@@ -129,10 +153,22 @@ def fetch_garmin_data():
     st.session_state.garmin_data = data
     return data
 
+def fetch_cycle_data():
+    if "cycle_data" in st.session_state:
+        return st.session_state.cycle_data
+    try:
+        r = http_req.get(CYCLE_DATA_URL, timeout=10)
+        r.raise_for_status()
+        data = r.json()
+    except:
+        data = []
+    st.session_state.cycle_data = data
+    return data
+
 
 # ---------- Claude ----------
 
-def comprehensive_analysis(runs, garmin, daily_log):
+def comprehensive_analysis(runs, garmin, daily_log, cycle_today=None):
     client = anthropic.Anthropic(api_key=CLAUDE_API_KEY)
 
     sleep_text = ""
@@ -150,7 +186,12 @@ def comprehensive_analysis(runs, garmin, daily_log):
     if garmin.get("strength"):
         strength_text = f"最近力量训练：{json.dumps(garmin['strength'], ensure_ascii=False)}"
 
-    cycle_text = f"生理周期：第 {daily_log.get('cycle_day', '未知')} 天，阶段 {daily_log.get('cycle_phase', '未知')}" if daily_log.get('cycle_day') else ""
+    if cycle_today and cycle_today.get("cycle_phase"):
+        cycle_text = f"生理周期：{cycle_today['cycle_phase']}，第 {cycle_today.get('cycle_day', '?')} 天"
+    elif daily_log.get('cycle_day'):
+        cycle_text = f"生理周期：第 {daily_log.get('cycle_day', '未知')} 天，阶段 {daily_log.get('cycle_phase', '未知')}"
+    else:
+        cycle_text = ""
     nutrition_text = f"今日摄入：{daily_log.get('nutrition_notes', '')}" if daily_log.get('nutrition_notes') else ""
 
     recent_runs = runs[-5:] if len(runs) >= 5 else runs
@@ -245,6 +286,10 @@ if "runs" not in st.session_state:
 with st.spinner("同步 Garmin 数据..."):
     garmin = fetch_garmin_data()
 
+cycle_history = fetch_cycle_data()
+today_str = str(date.today())
+cycle_today = next((e for e in reversed(cycle_history) if e.get("date") <= today_str), None)
+
 runs = st.session_state.runs
 last_run = runs[-1]["date"] if runs else "无"
 st.markdown(f'<div class="page-subtitle">最近 {len(runs)} 次跑步 · {last_run} · Garmin {garmin.get("date", "")}</div>', unsafe_allow_html=True)
@@ -337,6 +382,39 @@ with mid:
     elif not garmin.get("strength"):
         st.info("最近50次活动中无力量训练记录")
 
+    # 经期板块
+    st.markdown("---")
+    phase = cycle_today.get("cycle_phase") if cycle_today else None
+    cycle_day = cycle_today.get("cycle_day") if cycle_today else None
+    info = PHASE_INFO.get(phase, {})
+
+    if phase and info:
+        st.markdown(f"""<div class="health-card">
+            <h4>经期状态</h4>
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+                <span style="font-size:1.8rem">{info['emoji']}</span>
+                <div>
+                    <div style="font-size:1.1rem;font-weight:700;color:{info['color']}">{phase}</div>
+                    <div style="color:#6b7280;font-size:0.8rem">第 {cycle_day or '?'} 天</div>
+                </div>
+            </div>
+            <div style="font-size:0.85rem;color:#374151;margin-bottom:6px">{info['tip']}</div>
+            <div style="font-size:0.8rem;color:#6b7280">{info['hrv']}</div>
+        </div>""", unsafe_allow_html=True)
+    else:
+        st.markdown('<div class="health-card"><h4>经期状态</h4><div style="color:#9ca3af;font-size:0.85rem">运行 update_garmin.py 时记录经期数据</div></div>', unsafe_allow_html=True)
+
+    # 历史对比图
+    if len(cycle_history) >= 3:
+        st.markdown("**📊 经期 × HRV 趋势**")
+        df_cycle = pd.DataFrame(cycle_history)
+        df_cycle = df_cycle[df_cycle["hrv"].notna()].copy()
+        if not df_cycle.empty:
+            df_cycle["date"] = pd.to_datetime(df_cycle["date"])
+            phase_color_map = {"月经期": 1, "卵泡期": 2, "排卵期": 3, "黄体期": 4}
+            df_cycle["phase_num"] = df_cycle["cycle_phase"].map(phase_color_map)
+            st.line_chart(df_cycle.set_index("date")[["hrv"]], color=["#a855f7"], height=150)
+
 with right:
     st.markdown("**💬 问 Claude**")
 
@@ -378,7 +456,7 @@ with right:
 st.divider()
 if "analysis" not in st.session_state:
     with st.spinner("Claude 综合分析中..."):
-        st.session_state.analysis = comprehensive_analysis(runs, garmin, daily_log)
+        st.session_state.analysis = comprehensive_analysis(runs, garmin, daily_log, cycle_today)
 
 st.markdown(f"""
 <div class="analysis-card">
