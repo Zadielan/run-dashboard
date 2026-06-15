@@ -5,6 +5,7 @@ import os
 import time
 import base64
 import tempfile
+import requests as http_req
 import garth
 from stravalib import Client
 from datetime import date, timedelta
@@ -119,12 +120,17 @@ def fetch_garmin_data():
         return st.session_state.garmin_data
 
     try:
-        tmpdir = tempfile.mkdtemp()
-        with open(os.path.join(tmpdir, "oauth1_token.json"), "wb") as f:
-            f.write(base64.b64decode(GARMIN_OAUTH1))
-        with open(os.path.join(tmpdir, "oauth2_token.json"), "wb") as f:
-            f.write(base64.b64decode(GARMIN_OAUTH2))
-        garth.resume(tmpdir)
+        oauth2_data = json.loads(base64.b64decode(GARMIN_OAUTH2))
+        access_token = oauth2_data["access_token"]
+        headers = {
+            "Authorization": f"Bearer {access_token}",
+            "NK": "NT",
+            "X-app-ver": "4.82.0.0",
+        }
+        def garmin_get(path, params=None):
+            r = http_req.get(f"https://connectapi.garmin.com{path}", headers=headers, params=params, timeout=10)
+            r.raise_for_status()
+            return r.json()
     except Exception as e:
         return {"error": str(e)}
 
@@ -135,7 +141,7 @@ def fetch_garmin_data():
 
     # 睡眠
     try:
-        raw = garth.connectapi(f"/wellness-service/wellness/dailySleepData/{GARMIN_USER_ID}?date={yesterday}")
+        raw = garmin_get(f"/wellness-service/wellness/dailySleepData/{GARMIN_USER_ID}", params={"date": yesterday})
         dto = raw.get("dailySleepDTO", {})
         data["sleep"] = {
             "total_hours": round(dto.get("sleepTimeSeconds", 0) / 3600, 1),
@@ -154,7 +160,7 @@ def fetch_garmin_data():
 
     # HRV
     try:
-        hrv_raw = garth.connectapi(f"/hrv-service/hrv/{yesterday}")
+        hrv_raw = garmin_get(f"/hrv-service/hrv/{yesterday}")
         s = hrv_raw.get("hrvSummary", {})
         baseline = s.get("baseline", {})
         data["hrv"] = {
@@ -172,7 +178,7 @@ def fetch_garmin_data():
 
     # 力量训练（最近5次）
     try:
-        acts = garth.connectapi("/activitylist-service/activities/search/activities?limit=50&start=0")
+        acts = garmin_get("/activitylist-service/activities/search/activities", params={"limit": 50, "start": 0})
         strength = [a for a in acts if a.get("activityType", {}).get("typeKey", "") == "strength_training"][:5]
         data["strength"] = [{
             "date": a.get("startTimeLocal", "")[:10],
