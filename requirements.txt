@@ -2,3 +2,4 @@ streamlit
 anthropic
 stravalib
 pandas
+garth
