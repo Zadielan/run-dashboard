@@ -115,84 +115,17 @@ def fetch_runs(strava, limit=30):
 
 # ---------- Garmin ----------
 
+GARMIN_DATA_URL = "https://raw.githubusercontent.com/Zadielan/run-dashboard/main/garmin_data.json"
+
 def fetch_garmin_data():
     if "garmin_data" in st.session_state:
         return st.session_state.garmin_data
-
     try:
-        oauth2_data = json.loads(base64.b64decode(GARMIN_OAUTH2))
-        access_token = oauth2_data["access_token"]
-        headers = {
-            "Authorization": f"Bearer {access_token}",
-            "NK": "NT",
-            "X-app-ver": "4.82.0.0",
-        }
-        def garmin_get(path, params=None):
-            r = http_req.get(f"https://connectapi.garmin.com{path}", headers=headers, params=params, timeout=10)
-            r.raise_for_status()
-            return r.json()
+        r = http_req.get(GARMIN_DATA_URL, timeout=10)
+        r.raise_for_status()
+        data = r.json()
     except Exception as e:
-        return {"error": str(e)}
-
-    yesterday = (date.today() - timedelta(days=1)).strftime("%Y-%m-%d")
-    data = {"date": yesterday}
-
-    errors = []
-
-    # 睡眠
-    try:
-        raw = garmin_get(f"/wellness-service/wellness/dailySleepData/{GARMIN_USER_ID}", params={"date": yesterday})
-        dto = raw.get("dailySleepDTO", {})
-        data["sleep"] = {
-            "total_hours": round(dto.get("sleepTimeSeconds", 0) / 3600, 1),
-            "deep_min": round(dto.get("deepSleepSeconds", 0) / 60),
-            "rem_min": round(dto.get("remSleepSeconds", 0) / 60),
-            "light_min": round(dto.get("lightSleepSeconds", 0) / 60),
-            "awake_min": round(dto.get("awakeSleepSeconds", 0) / 60),
-            "body_battery_change": raw.get("bodyBatteryChange"),
-            "resting_hr": raw.get("restingHeartRate"),
-            "avg_overnight_hrv": raw.get("avgOvernightHrv"),
-            "sleep_score": dto.get("sleepScores", {}).get("overall", {}).get("value") if isinstance(dto.get("sleepScores"), dict) else None,
-        }
-    except Exception as e:
-        data["sleep"] = None
-        errors.append(f"睡眠: {e}")
-
-    # HRV
-    try:
-        hrv_raw = garmin_get(f"/hrv-service/hrv/{yesterday}")
-        s = hrv_raw.get("hrvSummary", {})
-        baseline = s.get("baseline", {})
-        data["hrv"] = {
-            "weekly_avg": s.get("weeklyAvg"),
-            "last_night_avg": s.get("lastNightAvg"),
-            "last_night_5min_high": s.get("lastNight5MinHigh"),
-            "baseline_low": baseline.get("balancedLow"),
-            "baseline_high": baseline.get("balancedUpper"),
-            "status": s.get("status"),
-            "feedback": s.get("feedbackPhrase"),
-        }
-    except Exception as e:
-        data["hrv"] = None
-        errors.append(f"HRV: {e}")
-
-    # 力量训练（最近5次）
-    try:
-        acts = garmin_get("/activitylist-service/activities/search/activities", params={"limit": 50, "start": 0})
-        strength = [a for a in acts if a.get("activityType", {}).get("typeKey", "") == "strength_training"][:5]
-        data["strength"] = [{
-            "date": a.get("startTimeLocal", "")[:10],
-            "name": a.get("activityName", "力量训练"),
-            "duration_min": round((a.get("duration") or 0) / 60),
-            "calories": a.get("calories"),
-        } for a in strength]
-    except Exception as e:
-        data["strength"] = []
-        errors.append(f"力量训练: {e}")
-
-    if errors:
-        data["errors"] = errors
-
+        data = {"error": f"读取 Garmin 数据失败: {e}"}
     st.session_state.garmin_data = data
     return data
 
