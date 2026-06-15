@@ -10,7 +10,7 @@ import pandas as pd
 STRAVA_CLIENT_ID     = st.secrets["STRAVA_CLIENT_ID"]
 STRAVA_CLIENT_SECRET = st.secrets["STRAVA_CLIENT_SECRET"]
 CLAUDE_API_KEY       = st.secrets["CLAUDE_API_KEY"]
-REDIRECT_URI         = "https://run-dashboard-dnsuxhdltqm8mlquhnhxb6.streamlit.app/"
+STRAVA_REFRESH_TOKEN = st.secrets["STRAVA_REFRESH_TOKEN"]
 # ============================================================
 
 st.set_page_config(page_title="跑步数据", page_icon="🏃", layout="wide")
@@ -134,54 +134,24 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
 """, unsafe_allow_html=True)
 
 
-# ---------- Strava OAuth ----------
+# ---------- Strava ----------
 
 def get_strava_client():
-    if "strava_token" not in st.session_state:
-        return None
-    token = st.session_state.strava_token
-    strava = Client()
-    if token["expires_at"] < time.time():
-        new_token = strava.refresh_access_token(
-            client_id=STRAVA_CLIENT_ID,
-            client_secret=STRAVA_CLIENT_SECRET,
-            refresh_token=token["refresh_token"]
-        )
-        st.session_state.strava_token = dict(new_token)
+    if "strava_token" in st.session_state:
         token = st.session_state.strava_token
+        if token["expires_at"] > time.time():
+            strava = Client()
+            strava.access_token = token["access_token"]
+            return strava
+    strava = Client()
+    token = strava.refresh_access_token(
+        client_id=STRAVA_CLIENT_ID,
+        client_secret=STRAVA_CLIENT_SECRET,
+        refresh_token=STRAVA_REFRESH_TOKEN
+    )
+    st.session_state.strava_token = dict(token)
     strava.access_token = token["access_token"]
     return strava
-
-def get_auth_url():
-    strava = Client()
-    return strava.authorization_url(
-        client_id=STRAVA_CLIENT_ID,
-        redirect_uri=REDIRECT_URI,
-        scope=["activity:read_all"]
-    )
-
-def handle_oauth_callback():
-    params = st.query_params
-    if "error" in params:
-        st.error(f"Strava 授权被拒绝：{params['error']}")
-        st.query_params.clear()
-        return False
-    if "code" in params:
-        try:
-            strava = Client()
-            token = strava.exchange_code_for_token(
-                client_id=STRAVA_CLIENT_ID,
-                client_secret=STRAVA_CLIENT_SECRET,
-                code=params["code"]
-            )
-            st.session_state.strava_token = dict(token)
-            st.query_params.clear()
-            return True
-        except Exception as e:
-            st.error(f"授权失败：{e}")
-            st.query_params.clear()
-            return False
-    return False
 
 
 # ---------- 数据 ----------
@@ -259,39 +229,16 @@ with st.sidebar:
     limit = st.slider("显示最近几次", 10, 50, 20)
     refresh = st.button("🔄 刷新数据", use_container_width=True)
     st.divider()
-    if st.button("重新授权 Strava", use_container_width=True):
-        st.session_state.clear()
-        st.rerun()
+    st.caption("🏃 跑步数据由 Strava 提供")
 
 
 # ---------- 主内容 ----------
 
 st.markdown('<div class="page-title">🏃 我的跑步数据</div>', unsafe_allow_html=True)
 
-# 处理 OAuth 回调
-if "code" in st.query_params:
-    with st.spinner("正在完成授权..."):
-        handle_oauth_callback()
-    st.rerun()
-
-# 授权检查
-strava = get_strava_client()
-if strava is None:
-    st.markdown('<div class="page-subtitle">连接 Strava 开始分析你的跑步数据</div>', unsafe_allow_html=True)
-    auth_url = get_auth_url()
-    st.markdown(f'''
-        <a href="{auth_url}" target="_self" style="
-            display:inline-block;
-            background:#1a1a2e;
-            color:white;
-            padding:12px 24px;
-            border-radius:10px;
-            font-weight:500;
-            text-decoration:none;
-            font-size:1rem;
-        ">🔗 连接 Strava 账号</a>
-    ''', unsafe_allow_html=True)
-    st.stop()
+# 获取 Strava 客户端
+with st.spinner("连接 Strava..."):
+    strava = get_strava_client()
 
 # 获取数据
 if "runs" not in st.session_state or refresh:
