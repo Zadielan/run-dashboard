@@ -191,10 +191,14 @@ def fetch_runs(strava, limit=30):
     for activity in strava.get_activities(limit=limit):
         if activity.type != "Run":
             continue
-        distance_km = round(float(activity.distance) / 1000, 2)
-        if not activity.moving_time or distance_km == 0:
+        if not activity.distance or float(activity.distance) == 0:
             continue
-        duration_min = round(activity.moving_time.total_seconds() / 60, 1)
+        distance_km = round(float(activity.distance) / 1000, 2)
+        mt = activity.moving_time
+        if mt is None:
+            continue
+        duration_sec = mt.total_seconds() if hasattr(mt, 'total_seconds') else int(mt)
+        duration_min = round(duration_sec / 60, 1)
         pace = round(duration_min / distance_km, 2) if distance_km > 0 else None
         runs.append({
             "date": str(activity.start_date)[:10],
