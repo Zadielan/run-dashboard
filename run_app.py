@@ -131,6 +131,8 @@ def fetch_garmin_data():
     yesterday = (date.today() - timedelta(days=1)).strftime("%Y-%m-%d")
     data = {"date": yesterday}
 
+    errors = []
+
     # 睡眠
     try:
         raw = garth.connectapi(f"/wellness-service/wellness/dailySleepData/{GARMIN_USER_ID}?date={yesterday}")
@@ -146,8 +148,9 @@ def fetch_garmin_data():
             "avg_overnight_hrv": raw.get("avgOvernightHrv"),
             "sleep_score": dto.get("sleepScores", {}).get("overall", {}).get("value") if isinstance(dto.get("sleepScores"), dict) else None,
         }
-    except:
+    except Exception as e:
         data["sleep"] = None
+        errors.append(f"睡眠: {e}")
 
     # HRV
     try:
@@ -163,8 +166,9 @@ def fetch_garmin_data():
             "status": s.get("status"),
             "feedback": s.get("feedbackPhrase"),
         }
-    except:
+    except Exception as e:
         data["hrv"] = None
+        errors.append(f"HRV: {e}")
 
     # 力量训练（最近5次）
     try:
@@ -176,8 +180,12 @@ def fetch_garmin_data():
             "duration_min": round((a.get("duration") or 0) / 60),
             "calories": a.get("calories"),
         } for a in strength]
-    except:
+    except Exception as e:
         data["strength"] = []
+        errors.append(f"力量训练: {e}")
+
+    if errors:
+        data["errors"] = errors
 
     st.session_state.garmin_data = data
     return data
@@ -350,6 +358,10 @@ with left:
 
 with mid:
     st.markdown("**🌙 健康数据**")
+
+    if garmin.get("errors"):
+        for err in garmin["errors"]:
+            st.warning(err)
 
     if garmin.get("sleep"):
         s = garmin["sleep"]
