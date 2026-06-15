@@ -1,0 +1,56 @@
+{
+  "date": "2026-06-15",
+  "updated_at": "2026-06-16",
+  "sleep": {
+    "total_hours": 6.3,
+    "deep_min": 55,
+    "rem_min": 74,
+    "light_min": 247,
+    "awake_min": 16,
+    "body_battery_change": 36,
+    "resting_hr": 50,
+    "avg_overnight_hrv": 58.0,
+    "sleep_score": 75
+  },
+  "hrv": {
+    "weekly_avg": 74,
+    "last_night_avg": 58,
+    "last_night_5min_high": 74,
+    "baseline_low": 49,
+    "baseline_high": 73,
+    "status": "UNBALANCED",
+    "feedback": "HRV_UNBALANCED_4"
+  },
+  "strength": [
+    {
+      "date": "2025-10-03",
+      "name": "Strength",
+      "duration_min": 118,
+      "calories": 564.0
+    },
+    {
+      "date": "2025-09-09",
+      "name": "Strength",
+      "duration_min": 56,
+      "calories": 229.0
+    },
+    {
+      "date": "2025-08-20",
+      "name": "Strength",
+      "duration_min": 45,
+      "calories": 109.0
+    },
+    {
+      "date": "2025-08-19",
+      "name": "Strength",
+      "duration_min": 282,
+      "calories": 595.0
+    },
+    {
+      "date": "2025-06-23",
+      "name": "Strength",
+      "duration_min": 39,
+      "calories": 111.0
+    }
+  ]
+}
