@@ -162,16 +162,25 @@ def get_auth_url():
 
 def handle_oauth_callback():
     params = st.query_params
-    if "code" in params and "error" not in params:
-        strava = Client()
-        token = strava.exchange_code_for_token(
-            client_id=STRAVA_CLIENT_ID,
-            client_secret=STRAVA_CLIENT_SECRET,
-            code=params["code"]
-        )
-        st.session_state.strava_token = dict(token)
+    if "error" in params:
+        st.error(f"Strava 授权被拒绝：{params['error']}")
         st.query_params.clear()
-        return True
+        return False
+    if "code" in params:
+        try:
+            strava = Client()
+            token = strava.exchange_code_for_token(
+                client_id=STRAVA_CLIENT_ID,
+                client_secret=STRAVA_CLIENT_SECRET,
+                code=params["code"]
+            )
+            st.session_state.strava_token = dict(token)
+            st.query_params.clear()
+            return True
+        except Exception as e:
+            st.error(f"授权失败：{e}")
+            st.query_params.clear()
+            return False
     return False
 
 
