@@ -1,8 +1,8 @@
 [
   {
     "date": "2026-06-16",
-    "cycle_day": 0,
-    "cycle_phase": "卵泡期",
+    "cycle_day": null,
+    "cycle_phase": null,
     "nutrition_notes": null,
     "hrv": 58,
     "sleep_hours": 6.3
