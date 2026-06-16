@@ -327,7 +327,55 @@ with st.spinner("同步 Garmin 数据..."):
 
 cycle_history = fetch_cycle_data()
 today_str = str(date.today())
+today_date = date.today()
+
+# 自动推算经期阶段
+def predict_cycle(history):
+    period_starts = sorted([
+        e["date"] for e in history
+        if e.get("cycle_day") == 1 or e.get("is_period_start")
+    ])
+    if not period_starts:
+        return None
+
+    last_start = date.fromisoformat(period_starts[-1])
+    days_since = (today_date - last_start).days + 1  # 周期第几天
+
+    # 计算平均周期长度
+    if len(period_starts) >= 2:
+        intervals = [(date.fromisoformat(period_starts[i+1]) - date.fromisoformat(period_starts[i])).days
+                     for i in range(len(period_starts)-1)]
+        avg_cycle = round(sum(intervals) / len(intervals))
+    else:
+        avg_cycle = 28  # 默认
+
+    # 如果超过一个周期，可能已进入新周期
+    actual_day = days_since if days_since <= avg_cycle else days_since % avg_cycle or avg_cycle
+    next_period = last_start + __import__('datetime').timedelta(days=avg_cycle - 1)
+
+    if actual_day <= 5:
+        phase = "月经期"
+    elif actual_day <= 13:
+        phase = "卵泡期"
+    elif actual_day <= 15:
+        phase = "排卵期"
+    else:
+        phase = "黄体期"
+
+    return {
+        "cycle_day": actual_day,
+        "cycle_phase": phase,
+        "avg_cycle": avg_cycle,
+        "next_period": str(next_period),
+        "days_to_next": (next_period - today_date).days,
+        "is_new_cycle_possible": days_since > avg_cycle,
+    }
+
+cycle_pred = predict_cycle(cycle_history)
 cycle_today = next((e for e in reversed(cycle_history) if e.get("date") <= today_str), None)
+# 用预测结果填充 cycle_today（优先用预测）
+if cycle_pred:
+    cycle_today = {**(cycle_today or {}), **cycle_pred}
 
 runs = st.session_state.runs
 last_run = runs[-1]["date"] if runs else "无"
@@ -585,22 +633,40 @@ with mid:
     phase = cycle_today.get("cycle_phase") if cycle_today else None
     cycle_day = cycle_today.get("cycle_day") if cycle_today else None
     info = PHASE_INFO.get(phase, {})
+    is_predicted = cycle_pred is not None  # 是否来自自动预测
 
     if phase and info:
+        next_period = cycle_today.get("next_period")
+        days_to_next = cycle_today.get("days_to_next")
+        avg_cycle_len = cycle_today.get("avg_cycle", 28)
+        pred_badge = '<span style="font-size:0.7rem;background:#e0e7ff;color:#4f46e5;padding:1px 6px;border-radius:10px;margin-left:6px">AI 预测</span>' if is_predicted else ''
+
+        next_period_str = ""
+        if next_period and days_to_next is not None:
+            if days_to_next < 0:
+                next_period_str = f'<div style="font-size:0.78rem;color:#ef4444;margin-top:4px">⚠️ 预计经期已逾期 {-days_to_next} 天（请标记新周期）</div>'
+            elif days_to_next == 0:
+                next_period_str = '<div style="font-size:0.78rem;color:#ef4444;margin-top:4px">🔴 预计今天经期开始</div>'
+            elif days_to_next <= 3:
+                next_period_str = f'<div style="font-size:0.78rem;color:#f97316;margin-top:4px">📅 预计 {days_to_next} 天后经期（{next_period}）</div>'
+            else:
+                next_period_str = f'<div style="font-size:0.78rem;color:#6b7280;margin-top:4px">📅 预计下次经期：{next_period}（{days_to_next} 天后）</div>'
+
         st.markdown(f"""<div class="health-card">
-            <h4>经期状态</h4>
+            <h4>经期状态{pred_badge}</h4>
             <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
                 <span style="font-size:1.8rem">{info['emoji']}</span>
                 <div>
                     <div style="font-size:1.1rem;font-weight:700;color:{info['color']}">{phase}</div>
-                    <div style="color:#6b7280;font-size:0.8rem">第 {cycle_day or '?'} 天</div>
+                    <div style="color:#6b7280;font-size:0.8rem">第 {cycle_day or '?'} 天 · 平均周期 {avg_cycle_len} 天</div>
                 </div>
             </div>
             <div style="font-size:0.85rem;color:#374151;margin-bottom:6px">{info['tip']}</div>
-            <div style="font-size:0.8rem;color:#6b7280">{info['hrv']}</div>
+            <div style="font-size:0.8rem;color:#6b7280;margin-bottom:4px">{info['hrv']}</div>
+            {next_period_str}
         </div>""", unsafe_allow_html=True)
     else:
-        st.markdown('<div class="health-card"><h4>经期状态</h4><div style="color:#9ca3af;font-size:0.85rem">运行 update_garmin.py 时记录经期数据</div></div>', unsafe_allow_html=True)
+        st.markdown('<div class="health-card"><h4>经期状态</h4><div style="color:#9ca3af;font-size:0.85rem">运行 update_garmin.py 并回答"今天是否经期第一天？"即可开始追踪，App 将自动推算阶段</div></div>', unsafe_allow_html=True)
 
     # 历史对比图
     if len(cycle_history) >= 3:

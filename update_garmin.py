@@ -133,14 +133,9 @@ with open(garmin_path, "w", encoding="utf-8") as f:
     json.dump(data, f, ensure_ascii=False, indent=2)
 
 # ============================================================
-# 经期日志
+# 经期日志（自动推算阶段，只需标记经期第一天）
 # ============================================================
-print("\n=== 今日经期日志（直接回车跳过）===")
-cycle_day_input = input("经期第几天（不在经期输 0 或回车跳过）: ").strip()
-phase_options = {"1": "月经期", "2": "卵泡期", "3": "排卵期", "4": "黄体期"}
-print("阶段：1=月经期  2=卵泡期  3=排卵期  4=黄体期")
-phase_input = input("选择阶段（输数字，或回车跳过）: ").strip()
-nutrition_input = input("今日饮食备注（回车跳过）: ").strip()
+print("\n=== 今日经期日志 ===")
 
 cycle_path = os.path.join(REPO_DIR, "cycle_data.json")
 if os.path.exists(cycle_path):
@@ -150,12 +145,50 @@ else:
     cycle_history = []
 
 today = str(date.today())
-cycle_history = [e for e in cycle_history if e["date"] != today]
+today_date = date.today()
 
+# 找到最近一次经期开始日期
+period_starts = sorted([
+    date.fromisoformat(e["date"])
+    for e in cycle_history
+    if e.get("cycle_day") == 1 or e.get("is_period_start")
+])
+
+# 计算今天预测的周期天数
+if period_starts:
+    last_start = period_starts[-1]
+    days_since = (today_date - last_start).days + 1
+    if len(period_starts) >= 2:
+        intervals = [(period_starts[i+1] - period_starts[i]).days for i in range(len(period_starts)-1)]
+        avg_cycle = round(sum(intervals) / len(intervals))
+    else:
+        avg_cycle = 28
+    actual_day = days_since if days_since <= avg_cycle else days_since % avg_cycle or avg_cycle
+    if actual_day <= 5:   auto_phase = "月经期"
+    elif actual_day <= 13: auto_phase = "卵泡期"
+    elif actual_day <= 15: auto_phase = "排卵期"
+    else:                  auto_phase = "黄体期"
+    print(f"📅 预测：周期第 {actual_day} 天 → {auto_phase}（基于 {last_start} 开始，平均周期 {avg_cycle} 天）")
+else:
+    actual_day, auto_phase, avg_cycle = None, None, 28
+    print("⚠️ 还没有经期记录，请记录今天是否为经期第一天")
+
+# 只问是否经期开始（其他自动推算）
+period_start_input = input("今天是否是经期第一天？(y/n，回车跳过): ").strip().lower()
+nutrition_input = input("今日饮食备注（回车跳过）: ").strip()
+
+is_period_start = period_start_input == "y"
+if is_period_start:
+    actual_day = 1
+    auto_phase = "月经期"
+    print("✅ 已标记为经期第一天，阶段自动设为月经期")
+
+cycle_history = [e for e in cycle_history if e["date"] != today]
 entry = {
     "date": today,
-    "cycle_day": int(cycle_day_input) if cycle_day_input.isdigit() else None,
-    "cycle_phase": phase_options.get(phase_input) or (phase_input if phase_input else None),
+    "cycle_day": actual_day,
+    "cycle_phase": auto_phase,
+    "is_period_start": is_period_start,
     "nutrition_notes": nutrition_input if nutrition_input else None,
     "hrv": data.get("hrv", {}).get("last_night_avg") if data.get("hrv") else None,
     "sleep_hours": data.get("sleep", {}).get("total_hours") if data.get("sleep") else None,
@@ -165,7 +198,7 @@ cycle_history.sort(key=lambda x: x["date"])
 
 with open(cycle_path, "w", encoding="utf-8") as f:
     json.dump(cycle_history, f, ensure_ascii=False, indent=2)
-print(f"✅ 经期日志已记录：{entry['cycle_phase'] or '未填写'}")
+print(f"✅ 经期日志已记录：{entry['cycle_phase'] or '暂无记录'}")
 
 # 推送到 GitHub
 print("\n正在推送到 GitHub...")
