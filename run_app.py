@@ -214,12 +214,13 @@ def comprehensive_analysis(runs, garmin, daily_log, cycle_today=None):
         gr = garmin_runs[0]
         parts = []
         if gr.get("cadence_spm"): parts.append(f"步频{gr['cadence_spm']}SPM")
-        if gr.get("stride_length_m"): parts.append(f"步幅{gr['stride_length_m']}m")
+        if gr.get("stride_length_cm"): parts.append(f"步幅{gr['stride_length_cm']}cm")
         if gr.get("vertical_oscillation_cm"): parts.append(f"垂直振幅{gr['vertical_oscillation_cm']}cm")
         if gr.get("vertical_ratio_pct"): parts.append(f"垂直振幅比{gr['vertical_ratio_pct']}%")
         if gr.get("ground_contact_ms"): parts.append(f"触地时间{gr['ground_contact_ms']}ms")
-        if gr.get("aerobic_te"): parts.append(f"有氧训练效果{gr['aerobic_te']}")
+        if gr.get("aerobic_te"): parts.append(f"有氧训练效果{gr['aerobic_te']}({gr.get('te_label','')})")
         if gr.get("training_load"): parts.append(f"训练负荷{round(gr['training_load'])}")
+        if gr.get("stamina_start_pct"): parts.append(f"耐力{gr['stamina_start_pct']}%→{gr['stamina_end_pct']}%")
         if garmin.get("vo2max"): parts.append(f"VO2Max={garmin['vo2max']}")
         form_text = "最近一次跑步Garmin数据：" + "，".join(parts) if parts else ""
     else:
@@ -482,47 +483,93 @@ with mid:
     if garmin_runs:
         gr = garmin_runs[0]
         def fmt(v, unit="", decimals=1):
-            return f"{round(v, decimals)}{unit}" if v else "—"
-        def metric_color(val, good_min, good_max):
-            if not val: return "#6b7280"
+            return f"{round(v, decimals)}{unit}" if v is not None else "—"
+        def mc(val, good_min, good_max):
+            if val is None: return "#6b7280"
             return "#22c55e" if good_min <= val <= good_max else "#f97316"
+        def mc_lt(val, threshold):  # good = below threshold
+            if val is None: return "#6b7280"
+            return "#22c55e" if val <= threshold else "#f97316"
+
         cad = gr.get("cadence_spm")
-        vo_cm = gr.get("vertical_oscillation_cm")
-        vr = gr.get("vertical_ratio_pct")
+        sl  = gr.get("stride_length_cm")
+        vo  = gr.get("vertical_oscillation_cm")
+        vr  = gr.get("vertical_ratio_pct")
         gct = gr.get("ground_contact_ms")
+        te  = gr.get("aerobic_te")
+        ate = gr.get("anaerobic_te")
+        tl  = gr.get("training_load")
+        te_label = gr.get("te_label", "")
+        pw  = gr.get("avg_power_w")
+        np_ = gr.get("normalized_power_w")
+        s_start = gr.get("stamina_start_pct")
+        s_end   = gr.get("stamina_end_pct")
+        bb  = gr.get("body_battery_change")
+
+        te_labels_cn = {
+            "TEMPO": "节奏跑", "BASE": "基础有氧", "RECOVERY": "恢复",
+            "THRESHOLD": "乳酸阈", "INTERVAL": "间歇", "VO2MAX": "VO2Max"
+        }
+        te_label_cn = te_labels_cn.get(te_label, te_label)
+
         st.markdown(f"""<div class="health-card">
-            <h4>跑步动态（{gr['date']}）</h4>
-            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:8px;">
+            <h4>跑步动态 · {gr['date']} · {gr.get('name','')}</h4>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:10px;">
                 <div>
-                    <div style="font-size:1.2rem;font-weight:700;color:{metric_color(cad,170,185)}">{fmt(cad,'',0)}</div>
+                    <div style="font-size:1.15rem;font-weight:700;color:{mc(cad,170,185)}">{fmt(cad,'',0)}</div>
                     <div style="color:#6b7280;font-size:0.7rem">步频 SPM</div>
-                    <div style="font-size:0.7rem;color:#9ca3af">理想 170-180</div>
+                    <div style="font-size:0.68rem;color:#9ca3af">理想 170-180</div>
                 </div>
                 <div>
-                    <div style="font-size:1.2rem;font-weight:700;color:#3b82f6">{fmt(gr.get('stride_length_m'),'m')}</div>
+                    <div style="font-size:1.15rem;font-weight:700;color:#3b82f6">{fmt(sl,'cm',0)}</div>
                     <div style="color:#6b7280;font-size:0.7rem">步幅</div>
                 </div>
                 <div>
-                    <div style="font-size:1.2rem;font-weight:700;color:{metric_color(gct,200,270)}">{fmt(gct,'ms',0)}</div>
+                    <div style="font-size:1.15rem;font-weight:700;color:{mc_lt(gct,250)}">{fmt(gct,'ms',0)}</div>
                     <div style="color:#6b7280;font-size:0.7rem">触地时间</div>
-                    <div style="font-size:0.7rem;color:#9ca3af">理想 &lt;250ms</div>
+                    <div style="font-size:0.68rem;color:#9ca3af">理想 &lt;250ms</div>
                 </div>
                 <div>
-                    <div style="font-size:1.2rem;font-weight:700;color:{metric_color(vo_cm,6,9)}">{fmt(vo_cm,'cm')}</div>
+                    <div style="font-size:1.15rem;font-weight:700;color:{mc(vo,6,9)}">{fmt(vo,'cm')}</div>
                     <div style="color:#6b7280;font-size:0.7rem">垂直振幅</div>
-                    <div style="font-size:0.7rem;color:#9ca3af">理想 6-9cm</div>
+                    <div style="font-size:0.68rem;color:#9ca3af">理想 6-9cm</div>
                 </div>
                 <div>
-                    <div style="font-size:1.2rem;font-weight:700;color:{metric_color(vr,None,8.5) if vr and vr<=8.5 else '#f97316'}">{fmt(vr,'%')}</div>
+                    <div style="font-size:1.15rem;font-weight:700;color:{mc_lt(vr,8.5)}">{fmt(vr,'%')}</div>
                     <div style="color:#6b7280;font-size:0.7rem">垂直振幅比</div>
-                    <div style="font-size:0.7rem;color:#9ca3af">理想 &lt;8.5%</div>
+                    <div style="font-size:0.68rem;color:#9ca3af">理想 &lt;8.5%</div>
                 </div>
                 <div>
-                    <div style="font-size:1.2rem;font-weight:700;color:#a855f7">{fmt(gr.get('aerobic_te'),'',1)}</div>
-                    <div style="color:#6b7280;font-size:0.7rem">有氧训练效果</div>
+                    <div style="font-size:1.15rem;font-weight:700;color:#a855f7">{fmt(pw,'W',0)}</div>
+                    <div style="color:#6b7280;font-size:0.7rem">平均功率</div>
                 </div>
             </div>
-            {"<div style='font-size:0.8rem;color:#6b7280'>训练负荷：" + str(round(gr['training_load'])) + " · 无氧效果：" + str(gr.get('anaerobic_te','—')) + "</div>" if gr.get('training_load') else ""}
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;border-top:1px solid #f3f4f6;padding-top:10px;">
+                <div>
+                    <div style="font-size:1.15rem;font-weight:700;color:#f97316">{fmt(te,'',1)}</div>
+                    <div style="color:#6b7280;font-size:0.7rem">有氧效果 {te_label_cn}</div>
+                </div>
+                <div>
+                    <div style="font-size:1.15rem;font-weight:700;color:#6b7280">{fmt(ate,'',1)}</div>
+                    <div style="color:#6b7280;font-size:0.7rem">无氧效果</div>
+                </div>
+                <div>
+                    <div style="font-size:1.15rem;font-weight:700;color:#14b8a6">{fmt(tl,'',0)}</div>
+                    <div style="color:#6b7280;font-size:0.7rem">训练负荷</div>
+                </div>
+                <div>
+                    <div style="font-size:1.15rem;font-weight:700;color:#22c55e">{fmt(s_start,'%',0)} → {fmt(s_end,'%',0)}</div>
+                    <div style="color:#6b7280;font-size:0.7rem">耐力消耗</div>
+                </div>
+                <div>
+                    <div style="font-size:1.15rem;font-weight:700;color:{'#ef4444' if bb and bb<0 else '#22c55e'}">{fmt(bb,'',0)}</div>
+                    <div style="color:#6b7280;font-size:0.7rem">体能电量变化</div>
+                </div>
+                <div>
+                    <div style="font-size:1.15rem;font-weight:700;color:#3b82f6">{gr.get('steps','—')}</div>
+                    <div style="color:#6b7280;font-size:0.7rem">总步数</div>
+                </div>
+            </div>
         </div>""", unsafe_allow_html=True)
 
     if garmin.get("strength"):

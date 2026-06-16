@@ -97,21 +97,30 @@ for act in running_acts:
         garmin_runs.append({
             "date": act.get("startTimeLocal", "")[:10],
             "name": act.get("activityName", ""),
-            "distance_km": round((act.get("distance") or 0) / 1000, 2),
-            "duration_min": round((act.get("duration") or 0) / 60, 1),
-            "avg_hr": act.get("averageHR"),
-            "max_hr": act.get("maxHR"),
-            "aerobic_te": act.get("aerobicTrainingEffect"),
-            "anaerobic_te": act.get("anaerobicTrainingEffect"),
-            "training_load": act.get("activityTrainingLoad"),
-            # 跑步动态
-            "cadence_spm": round(float(s.get("averageRunningCadenceInStepsPerMinute") or 0) * 2) or None,
-            "stride_length_m": s.get("avgStrideLength"),
-            "vertical_oscillation_cm": s.get("avgVerticalOscillation"),
-            "vertical_ratio_pct": s.get("avgVerticalRatio"),
-            "ground_contact_ms": s.get("avgGroundContactTime"),
-            "ground_contact_balance": s.get("avgGroundContactBalance"),
-            "power_w": s.get("avgPower"),
+            "distance_km": round((s.get("distance") or 0) / 1000, 2),
+            "duration_min": round((s.get("duration") or 0) / 60, 1),
+            "avg_hr": s.get("averageHR"),
+            "max_hr": s.get("maxHR"),
+            "calories": s.get("calories"),
+            "steps": s.get("steps"),
+            # 跑步动态（字段名来自 Garmin API 实测）
+            "cadence_spm": round(s.get("averageRunCadence") or 0) or None,  # 已是双脚 SPM
+            "stride_length_cm": s.get("strideLength"),          # cm
+            "vertical_oscillation_cm": s.get("verticalOscillation"),  # cm
+            "vertical_ratio_pct": round(s.get("verticalRatio") or 0, 1) or None,  # %
+            "ground_contact_ms": round(s.get("groundContactTime") or 0) or None,  # ms
+            "avg_power_w": s.get("averagePower"),
+            "normalized_power_w": s.get("normalizedPower"),
+            # 训练效果
+            "aerobic_te": s.get("trainingEffect"),
+            "anaerobic_te": s.get("anaerobicTrainingEffect"),
+            "te_label": s.get("trainingEffectLabel"),
+            "training_load": s.get("activityTrainingLoad"),
+            # 耐力
+            "stamina_start_pct": s.get("beginPotentialStamina"),
+            "stamina_end_pct": s.get("endPotentialStamina"),
+            "body_battery_change": s.get("differenceBodyBattery"),
+            "vigorous_min": s.get("vigorousIntensityMinutes"),
         })
     except Exception as e:
         print(f"  ⚠️ 活动 {act_id} 详情失败：{e}")
