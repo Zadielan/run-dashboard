@@ -86,7 +86,9 @@ def get_strava_client():
     return strava
 
 
-def fetch_runs(strava, limit=30):
+BERLIN_DATE = date(2026, 9, 27)  # 柏林马拉松
+
+def fetch_runs(strava, limit=50):
     runs = []
     for activity in strava.get_activities(limit=limit):
         if activity.type != "Run":
@@ -94,12 +96,18 @@ def fetch_runs(strava, limit=30):
         if not activity.distance or float(activity.distance) == 0:
             continue
         distance_km = round(float(activity.distance) / 1000, 2)
+        distance_m = float(activity.distance)
         mt = activity.moving_time
         if mt is None:
             continue
         duration_sec = mt.total_seconds() if hasattr(mt, 'total_seconds') else int(mt)
         duration_min = round(duration_sec / 60, 1)
         pace = round(duration_min / distance_km, 2) if distance_km > 0 else None
+        # 步频：Strava 返回单脚步频，×2 得到双脚 SPM
+        cadence_raw = activity.average_cadence
+        cadence = round(float(cadence_raw) * 2) if cadence_raw else None
+        # 步幅（cm）= 距离 / 总步数
+        stride_cm = round(distance_m / (cadence * duration_min) * 100) if cadence and duration_min > 0 else None
         runs.append({
             "date": str(activity.start_date)[:10],
             "name": activity.name,
@@ -107,7 +115,10 @@ def fetch_runs(strava, limit=30):
             "duration": duration_min,
             "pace": pace,
             "heartrate": activity.average_heartrate,
+            "max_heartrate": activity.max_heartrate,
             "elevation": round(float(activity.total_elevation_gain), 1) if activity.total_elevation_gain else 0,
+            "cadence": cadence,
+            "stride_cm": stride_cm,
         })
     runs.sort(key=lambda x: x["date"])
     return runs
@@ -196,9 +207,34 @@ def comprehensive_analysis(runs, garmin, daily_log, cycle_today=None):
 
     recent_runs = runs[-5:] if len(runs) >= 5 else runs
 
+    # 跑步动态（Garmin 详细数据）
+    garmin_runs = garmin.get("garmin_runs", [])
+    form_text = ""
+    if garmin_runs:
+        gr = garmin_runs[0]
+        parts = []
+        if gr.get("cadence_spm"): parts.append(f"步频{gr['cadence_spm']}SPM")
+        if gr.get("stride_length_m"): parts.append(f"步幅{gr['stride_length_m']}m")
+        if gr.get("vertical_oscillation_cm"): parts.append(f"垂直振幅{gr['vertical_oscillation_cm']}cm")
+        if gr.get("vertical_ratio_pct"): parts.append(f"垂直振幅比{gr['vertical_ratio_pct']}%")
+        if gr.get("ground_contact_ms"): parts.append(f"触地时间{gr['ground_contact_ms']}ms")
+        if gr.get("aerobic_te"): parts.append(f"有氧训练效果{gr['aerobic_te']}")
+        if gr.get("training_load"): parts.append(f"训练负荷{round(gr['training_load'])}")
+        if garmin.get("vo2max"): parts.append(f"VO2Max={garmin['vo2max']}")
+        form_text = "最近一次跑步Garmin数据：" + "，".join(parts) if parts else ""
+    else:
+        cadences = [r["cadence"] for r in recent_runs if r.get("cadence")]
+        avg_cadence = round(sum(cadences)/len(cadences)) if cadences else None
+        form_text = f"近期平均步频 {avg_cadence} SPM" if avg_cadence else ""
+
+    days_left = (BERLIN_DATE - date.today()).days
+    goal_text = f"目标赛事：2026年9月27日柏林马拉松，距今 {days_left} 天（{days_left//7} 周）"
+
     prompt = f"""你是我的个人运动与健康教练，请综合以下所有数据给出今日训练建议：
 
-【跑步（最近5次）】
+【目标】{goal_text}
+
+【跑步（最近5次，含步频步幅）】
 {json.dumps(recent_runs, ensure_ascii=False, indent=2)}
 
 【{sleep_text}】
@@ -206,11 +242,13 @@ def comprehensive_analysis(runs, garmin, daily_log, cycle_today=None):
 {f'【{strength_text}】' if strength_text else ''}
 {f'【{cycle_text}】' if cycle_text else ''}
 {f'【{nutrition_text}】' if nutrition_text else ''}
+{f'【{form_text}】' if form_text else ''}
 
-请用中文回答，分三部分：
+请用中文回答，分四部分：
 1. 今日身体状态评估（2-3句，考虑HRV、睡眠、生理周期）
-2. 今日训练建议（具体：跑/休/力量？强度？时长？）
-3. 本周重点提醒（1-2条）
+2. 今日训练建议（具体：跑/休/力量？配速？时长？结合备战柏林马拉松阶段）
+3. 跑步姿态反馈（步频是否达标170+？步幅是否合理？给出1条具体改进建议）
+4. 本周重点提醒（1-2条，围绕马拉松备战）
 
 语言简洁直接，像教练说话。"""
 
@@ -321,6 +359,48 @@ with c6:
 
 st.markdown("<br>", unsafe_allow_html=True)
 
+# 柏林马拉松倒计时
+days_to_berlin = (BERLIN_DATE - date.today()).days
+weeks_to_berlin = days_to_berlin // 7
+# 训练阶段判断
+if days_to_berlin > 70:
+    phase_name, phase_color, phase_tip = "基础积累期", "#3b82f6", "打好有氧底子，轻松跑占80%，每周稳步增量不超过10%"
+elif days_to_berlin > 28:
+    phase_name, phase_color, phase_tip = "专项训练期", "#f97316", "加入马配跑、长距离节奏跑，每周一次20km+长跑"
+elif days_to_berlin > 7:
+    phase_name, phase_color, phase_tip = "减量期 🎯", "#22c55e", "大幅减量，保持感觉，不要加练！信任你的训练积累"
+else:
+    phase_name, phase_color, phase_tip = "赛前最后一周", "#ef4444", "轻松慢跑保持状态，检查装备，提前取号"
+
+recent_4w = [r for r in runs if r["date"] >= str(date.today() - timedelta(days=28))]
+weekly_km = round(sum(r["distance"] for r in recent_4w) / 4, 1)
+
+st.markdown(f"""
+<div style="background:linear-gradient(135deg,#1a1a2e,#16213e);border-radius:16px;padding:20px 24px;margin-bottom:20px;color:white;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+  <div>
+    <div style="font-size:0.8rem;opacity:0.6;letter-spacing:0.1em;margin-bottom:4px">🎯 目标赛事</div>
+    <div style="font-size:1.3rem;font-weight:700">柏林马拉松 2026</div>
+    <div style="font-size:0.85rem;opacity:0.7;margin-top:2px">2026年9月27日</div>
+  </div>
+  <div style="text-align:center">
+    <div style="font-size:2.5rem;font-weight:800;color:#f97316">{days_to_berlin}</div>
+    <div style="font-size:0.75rem;opacity:0.6">天后</div>
+  </div>
+  <div style="text-align:center">
+    <div style="font-size:2rem;font-weight:700;color:#22c55e">{weeks_to_berlin}</div>
+    <div style="font-size:0.75rem;opacity:0.6">周</div>
+  </div>
+  <div style="flex:1;min-width:200px">
+    <div style="display:inline-block;background:{phase_color}33;border:1px solid {phase_color};border-radius:8px;padding:4px 12px;font-size:0.8rem;color:{phase_color};font-weight:600;margin-bottom:6px">{phase_name}</div>
+    <div style="font-size:0.82rem;opacity:0.8">{phase_tip}</div>
+  </div>
+  <div style="text-align:center">
+    <div style="font-size:1.6rem;font-weight:700;color:#a855f7">{weekly_km}</div>
+    <div style="font-size:0.75rem;opacity:0.6">近4周均周跑量 km</div>
+  </div>
+</div>
+""", unsafe_allow_html=True)
+
 # 主区域三列
 left, mid, right = st.columns([2, 2, 2])
 
@@ -328,15 +408,28 @@ with left:
     st.markdown("**📈 跑步数据**")
     df = pd.DataFrame(runs)
     df["date"] = pd.to_datetime(df["date"])
-    tab1, tab2 = st.tabs(["配速趋势", "距离"])
+    tab1, tab2, tab3 = st.tabs(["配速趋势", "距离", "步频"])
     with tab1:
-        st.line_chart(df.set_index("date")["pace"], color="#f97316", height=180)
+        st.line_chart(df.set_index("date")["pace"], color="#f97316", height=160)
     with tab2:
-        st.bar_chart(df.set_index("date")["distance"], color="#22c55e", height=180)
+        st.bar_chart(df.set_index("date")["distance"], color="#22c55e", height=160)
+    with tab3:
+        df_cad = df[df["cadence"].notna()]
+        if not df_cad.empty:
+            st.line_chart(df_cad.set_index("date")["cadence"], color="#a855f7", height=160)
+            avg_cad = round(df_cad["cadence"].mean())
+            cad_color = "#22c55e" if avg_cad >= 170 else "#f97316" if avg_cad >= 160 else "#ef4444"
+            tip = "✅ 步频理想（170-180 SPM）" if avg_cad >= 170 else "⚠️ 步频偏低，尝试提高至 170+ SPM" if avg_cad >= 160 else "❗步频过低，建议刻意练习提频"
+            st.markdown(f'<div style="font-size:0.85rem;color:{cad_color};padding:4px 0">{tip}（均值 {avg_cad} SPM）</div>', unsafe_allow_html=True)
+        else:
+            st.info("暂无步频数据")
 
     with st.expander("所有跑步记录"):
-        d = df[["date","distance","pace","heartrate"]].copy()
-        d.columns = ["日期","距离km","配速","心率"]
+        cols = ["date","distance","pace","heartrate","cadence","stride_cm"]
+        cols_exist = [c for c in cols if c in df.columns]
+        d = df[cols_exist].copy()
+        d.columns = {"date":"日期","distance":"距离km","pace":"配速","heartrate":"心率","cadence":"步频SPM","stride_cm":"步幅cm"}.get
+        d = df[cols_exist].rename(columns={"date":"日期","distance":"距离km","pace":"配速","heartrate":"心率","cadence":"步频","stride_cm":"步幅cm"})
         d["日期"] = d["日期"].dt.strftime("%m-%d")
         st.dataframe(d, hide_index=True, use_container_width=True)
 
@@ -372,6 +465,66 @@ with mid:
                 <div style="color:#6b7280;font-size:0.75rem">基准 {h['baseline_low']}-{h['baseline_high']}</div></div>
             </div>
             <div style="color:#6b7280;font-size:0.8rem">周均值 {h['weekly_avg']}</div>
+        </div>""", unsafe_allow_html=True)
+
+    # VO2Max
+    if garmin.get("vo2max"):
+        vo2 = garmin["vo2max"]
+        vo2_level = "精英" if vo2 >= 60 else "优秀" if vo2 >= 52 else "良好" if vo2 >= 44 else "一般"
+        st.markdown(f"""<div class="health-card">
+            <h4>VO2Max</h4>
+            <div style="display:flex;align-items:center;gap:12px;">
+                <div style="font-size:2rem;font-weight:700;color:#3b82f6">{vo2}</div>
+                <div style="color:#6b7280;font-size:0.85rem">mL/kg/min · {vo2_level}</div>
+            </div>
+        </div>""", unsafe_allow_html=True)
+
+    # 跑步动态（最近一次）
+    garmin_runs = garmin.get("garmin_runs", [])
+    if garmin_runs:
+        gr = garmin_runs[0]
+        def fmt(v, unit="", decimals=1):
+            return f"{round(v, decimals)}{unit}" if v else "—"
+        def metric_color(val, good_min, good_max):
+            if not val: return "#6b7280"
+            return "#22c55e" if good_min <= val <= good_max else "#f97316"
+        cad = gr.get("cadence_spm")
+        vo_cm = gr.get("vertical_oscillation_cm")
+        vr = gr.get("vertical_ratio_pct")
+        gct = gr.get("ground_contact_ms")
+        st.markdown(f"""<div class="health-card">
+            <h4>跑步动态（{gr['date']}）</h4>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:8px;">
+                <div>
+                    <div style="font-size:1.2rem;font-weight:700;color:{metric_color(cad,170,185)}">{fmt(cad,'',0)}</div>
+                    <div style="color:#6b7280;font-size:0.7rem">步频 SPM</div>
+                    <div style="font-size:0.7rem;color:#9ca3af">理想 170-180</div>
+                </div>
+                <div>
+                    <div style="font-size:1.2rem;font-weight:700;color:#3b82f6">{fmt(gr.get('stride_length_m'),'m')}</div>
+                    <div style="color:#6b7280;font-size:0.7rem">步幅</div>
+                </div>
+                <div>
+                    <div style="font-size:1.2rem;font-weight:700;color:{metric_color(gct,200,270)}">{fmt(gct,'ms',0)}</div>
+                    <div style="color:#6b7280;font-size:0.7rem">触地时间</div>
+                    <div style="font-size:0.7rem;color:#9ca3af">理想 &lt;250ms</div>
+                </div>
+                <div>
+                    <div style="font-size:1.2rem;font-weight:700;color:{metric_color(vo_cm,6,9)}">{fmt(vo_cm,'cm')}</div>
+                    <div style="color:#6b7280;font-size:0.7rem">垂直振幅</div>
+                    <div style="font-size:0.7rem;color:#9ca3af">理想 6-9cm</div>
+                </div>
+                <div>
+                    <div style="font-size:1.2rem;font-weight:700;color:{metric_color(vr,None,8.5) if vr and vr<=8.5 else '#f97316'}">{fmt(vr,'%')}</div>
+                    <div style="color:#6b7280;font-size:0.7rem">垂直振幅比</div>
+                    <div style="font-size:0.7rem;color:#9ca3af">理想 &lt;8.5%</div>
+                </div>
+                <div>
+                    <div style="font-size:1.2rem;font-weight:700;color:#a855f7">{fmt(gr.get('aerobic_te'),'',1)}</div>
+                    <div style="color:#6b7280;font-size:0.7rem">有氧训练效果</div>
+                </div>
+            </div>
+            {"<div style='font-size:0.8rem;color:#6b7280'>训练负荷：" + str(round(gr['training_load'])) + " · 无氧效果：" + str(gr.get('anaerobic_te','—')) + "</div>" if gr.get('training_load') else ""}
         </div>""", unsafe_allow_html=True)
 
     if garmin.get("strength"):
