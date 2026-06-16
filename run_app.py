@@ -427,8 +427,6 @@ with left:
     with st.expander("所有跑步记录"):
         cols = ["date","distance","pace","heartrate","cadence","stride_cm"]
         cols_exist = [c for c in cols if c in df.columns]
-        d = df[cols_exist].copy()
-        d.columns = {"date":"日期","distance":"距离km","pace":"配速","heartrate":"心率","cadence":"步频SPM","stride_cm":"步幅cm"}.get
         d = df[cols_exist].rename(columns={"date":"日期","distance":"距离km","pace":"配速","heartrate":"心率","cadence":"步频","stride_cm":"步幅cm"})
         d["日期"] = d["日期"].dt.strftime("%m-%d")
         st.dataframe(d, hide_index=True, use_container_width=True)
