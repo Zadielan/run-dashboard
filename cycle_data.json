@@ -1,9 +1,9 @@
 [
   {
     "date": "2026-06-16",
-    "cycle_day": null,
+    "cycle_day": 0,
     "cycle_phase": "卵泡期",
-    "nutrition_notes": "碳水超标，蛋白质一般，纤维素摄入不足",
+    "nutrition_notes": null,
     "hrv": 58,
     "sleep_hours": 6.3
   }
