@@ -3,13 +3,10 @@ import anthropic
 import json
 import os
 import time
-import base64
-import tempfile
 import requests as http_req
-import garth
-from stravalib import Client
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
 import pandas as pd
+from stravalib import Client
 
 # ============================================================
 STRAVA_CLIENT_ID     = st.secrets["STRAVA_CLIENT_ID"]
@@ -19,145 +16,141 @@ STRAVA_REFRESH_TOKEN = st.secrets["STRAVA_REFRESH_TOKEN"]
 GARMIN_OAUTH1        = st.secrets["GARMIN_OAUTH1"]
 GARMIN_OAUTH2        = st.secrets["GARMIN_OAUTH2"]
 GARMIN_USER_ID       = "119995800"
+BERLIN_DATE          = date(2026, 9, 27)
+GARMIN_DATA_URL  = "https://raw.githubusercontent.com/Zadielan/run-dashboard/main/garmin_data.json"
+CYCLE_DATA_URL   = "https://raw.githubusercontent.com/Zadielan/run-dashboard/main/cycle_data.json"
+BODY_DATA_URL    = "https://raw.githubusercontent.com/Zadielan/run-dashboard/main/body_data.json"
 # ============================================================
 
-st.set_page_config(page_title="健康数据", page_icon="🏃", layout="wide", initial_sidebar_state="expanded")
+st.set_page_config(page_title="健康训练", page_icon="🏃", layout="wide", initial_sidebar_state="collapsed")
 
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
-.stApp { background: #f0f2f6; }
+.stApp { background: #f0ebe0; }
 #MainMenu, footer, header { visibility: hidden; }
-.block-container { padding-top: 2rem; padding-bottom: 2rem; }
-.page-title { font-size: 2rem; font-weight: 700; color: #1a1a2e; margin-bottom: 4px; }
-.page-subtitle { color: #6b7280; font-size: 0.9rem; margin-bottom: 1.5rem; }
-.stat-card { background: white; border-radius: 16px; padding: 16px 20px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.08); border-left: 4px solid; margin-bottom: 8px; }
-.stat-card.orange { border-color: #f97316; }
-.stat-card.green  { border-color: #22c55e; }
-.stat-card.blue   { border-color: #3b82f6; }
-.stat-card.red    { border-color: #ef4444; }
-.stat-card.purple { border-color: #a855f7; }
-.stat-card.teal   { border-color: #14b8a6; }
-.stat-value { font-size: 1.8rem; font-weight: 700; color: #1a1a2e; line-height: 1.2; }
-.stat-label { font-size: 0.75rem; color: #6b7280; margin-top: 4px; text-transform: uppercase; letter-spacing: 0.05em; }
-.analysis-card { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-    border-radius: 20px; padding: 24px 28px; color: white;
-    box-shadow: 0 8px 32px rgba(26,26,46,0.2); margin: 1rem 0; }
-.analysis-card h3 { font-size: 0.9rem; font-weight: 600; opacity: 0.7; margin-bottom: 10px; letter-spacing: 0.05em; }
-.analysis-card p { line-height: 1.75; font-size: 0.92rem; opacity: 0.92; }
-.health-card { background: white; border-radius: 16px; padding: 20px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.08); margin-bottom: 12px; }
-.health-card h4 { font-size: 0.85rem; font-weight: 600; color: #6b7280;
-    text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px; }
-.chat-user { background: #3b82f6; color: white; border-radius: 18px 18px 4px 18px;
-    padding: 10px 16px; margin: 6px 0; margin-left: 20%; font-size: 0.92rem; }
-.chat-ai { background: white; color: #1a1a2e; border-radius: 18px 18px 18px 4px;
-    padding: 10px 16px; margin: 6px 0; margin-right: 20%; font-size: 0.92rem;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.08); line-height: 1.65; }
-.stTabs [data-baseweb="tab-list"] { gap: 8px; background: transparent; }
-.stTabs [data-baseweb="tab"] { background: white; border-radius: 10px; padding: 6px 16px; font-weight: 500; }
-.stTabs [aria-selected="true"] { background: #1a1a2e !important; color: white !important; }
-[data-testid="stSidebar"] { background: white; border-right: 1px solid #e5e7eb; }
-.stButton button { border-radius: 10px; font-weight: 500; border: none; background: #1a1a2e; color: white; }
-.stButton button:hover { background: #2d2d4e; }
+.block-container { padding: 1.5rem 2rem 2rem; max-width: 1200px; }
+
+/* Cards */
+.card {
+    background: white; border-radius: 18px; padding: 20px 22px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.07); margin-bottom: 14px;
+}
+.card h4 {
+    font-size: 0.8rem; font-weight: 700; color: #6b7280;
+    text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 14px;
+}
+
+/* Pills / tags */
+.pill {
+    display: inline-block; border-radius: 20px; padding: 4px 12px;
+    font-size: 0.8rem; font-weight: 500; margin: 3px 3px 3px 0;
+}
+.pill-beige  { background: #f0ebe0; color: #4a3f30; border: 1px solid #ddd5c5; }
+.pill-green  { background: #d1fae5; color: #065f46; border: 1px solid #6ee7b7; }
+.pill-red    { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+.pill-purple { background: #ede9fe; color: #5b21b6; border: 1px solid #c4b5fd; }
+.pill-orange { background: #fff7ed; color: #9a3412; border: 1px solid #fdba74; }
+.pill-dark   { background: #1a3c2e; color: white; }
+
+/* Readiness circle */
+.readiness-wrap { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+
+/* Stat mini */
+.mini-stat { text-align: center; padding: 10px; }
+.mini-stat .val { font-size: 1.5rem; font-weight: 800; color: #1a1a1a; }
+.mini-stat .lbl { font-size: 0.7rem; color: #9ca3af; margin-top: 2px; }
+
+/* Claude output */
+.ai-block { background: #f8faf8; border-left: 3px solid #2d4a3e; border-radius: 0 12px 12px 0; padding: 14px 18px; margin: 8px 0; font-size: 0.88rem; line-height: 1.75; color: #1a1a1a; }
+.ai-label { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #2d4a3e; margin-bottom: 4px; }
+
+/* Chat */
+.chat-user { background: #2d4a3e; color: white; border-radius: 18px 18px 4px 18px; padding: 10px 16px; margin: 6px 0; margin-left: 20%; font-size: 0.9rem; }
+.chat-ai   { background: white; color: #1a1a1a; border-radius: 18px 18px 18px 4px; padding: 10px 16px; margin: 6px 0; margin-right: 20%; font-size: 0.9rem; box-shadow: 0 1px 4px rgba(0,0,0,0.08); line-height: 1.65; }
+
+/* Berlin banner */
+.berlin-banner {
+    background: #1a3c2e; color: white; border-radius: 16px;
+    padding: 16px 24px; margin-bottom: 20px;
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;
+}
+
+/* Tabs */
+.stTabs [data-baseweb="tab-list"] { gap: 4px; background: white; border-radius: 14px; padding: 4px; box-shadow: 0 1px 4px rgba(0,0,0,0.07); }
+.stTabs [data-baseweb="tab"] { border-radius: 10px; padding: 7px 18px; font-weight: 500; font-size: 0.9rem; color: #6b7280; }
+.stTabs [aria-selected="true"] { background: #1a3c2e !important; color: white !important; }
+
+/* Buttons */
+.stButton button { border-radius: 12px; font-weight: 600; border: none; background: #1a3c2e; color: white; padding: 10px 20px; }
+.stButton button:hover { background: #2d5a44; }
+
+/* Progress bars */
+.prog-wrap { margin: 8px 0; }
+.prog-label { display: flex; justify-content: space-between; font-size: 0.82rem; margin-bottom: 4px; }
+.prog-bar-bg { background: #f0ebe0; border-radius: 6px; height: 8px; overflow: hidden; }
+.prog-bar-fill { height: 8px; border-radius: 6px; }
+
+/* Running dynamics grid */
+.dyn-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; }
+.dyn-item .dv { font-size: 1.1rem; font-weight: 700; }
+.dyn-item .dl { font-size: 0.7rem; color: #9ca3af; margin-top: 2px; }
+.dyn-item .dt { font-size: 0.65rem; color: #c4b5aa; }
+
+[data-testid="stSidebar"] { background: white; }
 </style>
 """, unsafe_allow_html=True)
 
 
-# ---------- Strava ----------
+# ══════════════════════════════════════════════════════
+# DATA FUNCTIONS
+# ══════════════════════════════════════════════════════
 
 def get_strava_client():
     if "strava_token" in st.session_state:
         token = st.session_state.strava_token
         if token["expires_at"] > time.time():
-            strava = Client()
-            strava.access_token = token["access_token"]
-            return strava
-    strava = Client()
-    token = strava.refresh_access_token(
-        client_id=STRAVA_CLIENT_ID,
-        client_secret=STRAVA_CLIENT_SECRET,
+            c = Client(); c.access_token = token["access_token"]; return c
+    c = Client()
+    token = c.refresh_access_token(
+        client_id=STRAVA_CLIENT_ID, client_secret=STRAVA_CLIENT_SECRET,
         refresh_token=STRAVA_REFRESH_TOKEN
     )
     st.session_state.strava_token = dict(token)
-    strava.access_token = token["access_token"]
-    return strava
-
-
-BERLIN_DATE = date(2026, 9, 27)  # 柏林马拉松
+    c.access_token = token["access_token"]
+    return c
 
 def fetch_runs(strava, limit=50):
     runs = []
-    for activity in strava.get_activities(limit=limit):
-        if activity.type != "Run":
-            continue
-        if not activity.distance or float(activity.distance) == 0:
-            continue
-        distance_km = round(float(activity.distance) / 1000, 2)
-        distance_m = float(activity.distance)
-        mt = activity.moving_time
-        if mt is None:
-            continue
-        duration_sec = mt.total_seconds() if hasattr(mt, 'total_seconds') else int(mt)
-        duration_min = round(duration_sec / 60, 1)
-        pace = round(duration_min / distance_km, 2) if distance_km > 0 else None
-        # 步频：Strava 返回单脚步频，×2 得到双脚 SPM
-        cadence_raw = activity.average_cadence
-        cadence = round(float(cadence_raw) * 2) if cadence_raw else None
-        # 步幅（cm）= 距离 / 总步数
-        stride_cm = round(distance_m / (cadence * duration_min) * 100) if cadence and duration_min > 0 else None
+    for a in strava.get_activities(limit=limit):
+        if a.type != "Run": continue
+        if not a.distance or float(a.distance) == 0: continue
+        dist_km = round(float(a.distance)/1000, 2)
+        dist_m  = float(a.distance)
+        mt = a.moving_time
+        if mt is None: continue
+        dur_sec = mt.total_seconds() if hasattr(mt,'total_seconds') else int(mt)
+        dur_min = round(dur_sec/60, 1)
+        pace = round(dur_min/dist_km, 2) if dist_km > 0 else None
+        cad_raw = a.average_cadence
+        cadence = round(float(cad_raw)*2) if cad_raw else None
+        stride_cm = round(dist_m/(cadence*dur_min)*100) if cadence and dur_min>0 else None
         runs.append({
-            "date": str(activity.start_date)[:10],
-            "name": activity.name,
-            "distance": distance_km,
-            "duration": duration_min,
-            "pace": pace,
-            "heartrate": activity.average_heartrate,
-            "max_heartrate": activity.max_heartrate,
-            "elevation": round(float(activity.total_elevation_gain), 1) if activity.total_elevation_gain else 0,
-            "cadence": cadence,
-            "stride_cm": stride_cm,
+            "date": str(a.start_date)[:10], "name": a.name,
+            "distance": dist_km, "duration": dur_min, "pace": pace,
+            "heartrate": a.average_heartrate, "max_heartrate": a.max_heartrate,
+            "elevation": round(float(a.total_elevation_gain),1) if a.total_elevation_gain else 0,
+            "cadence": cadence, "stride_cm": stride_cm,
         })
     runs.sort(key=lambda x: x["date"])
     return runs
-
-
-# ---------- Garmin ----------
-
-GARMIN_DATA_URL = "https://raw.githubusercontent.com/Zadielan/run-dashboard/main/garmin_data.json"
-CYCLE_DATA_URL  = "https://raw.githubusercontent.com/Zadielan/run-dashboard/main/cycle_data.json"
-
-PHASE_INFO = {
-    "月经期": {
-        "emoji": "🔴", "color": "#ef4444",
-        "tip": "低能量期，适合轻松慢跑、瑜伽、散步。避免高强度训练，多补铁和水分。",
-        "hrv": "HRV 通常偏低，休息优先。"
-    },
-    "卵泡期": {
-        "emoji": "🌱", "color": "#22c55e",
-        "tip": "精力逐渐上升，适合提速训练、力量训练，这是提升成绩的好时机。",
-        "hrv": "HRV 开始回升，身体恢复力强。"
-    },
-    "排卵期": {
-        "emoji": "⚡", "color": "#f97316",
-        "tip": "精力巅峰！适合冲击配速 PR、高强度间歇，把握这个窗口期。",
-        "hrv": "HRV 通常最高，训练适应性最好。"
-    },
-    "黄体期": {
-        "emoji": "🌙", "color": "#a855f7",
-        "tip": "精力下降，体温升高，心率偏高属正常。适合中低强度，重视睡眠和蛋白质摄入。",
-        "hrv": "HRV 可能下降，不必强迫完成计划。"
-    },
-}
 
 def fetch_garmin_data():
     if "garmin_data" in st.session_state:
         return st.session_state.garmin_data
     try:
-        r = http_req.get(GARMIN_DATA_URL, timeout=10)
-        r.raise_for_status()
+        r = http_req.get(GARMIN_DATA_URL, timeout=10); r.raise_for_status()
         data = r.json()
     except Exception as e:
         data = {"error": f"读取 Garmin 数据失败: {e}"}
@@ -168,563 +161,551 @@ def fetch_cycle_data():
     if "cycle_data" in st.session_state:
         return st.session_state.cycle_data
     try:
-        r = http_req.get(CYCLE_DATA_URL, timeout=10)
-        r.raise_for_status()
+        r = http_req.get(CYCLE_DATA_URL, timeout=10); r.raise_for_status()
         data = r.json()
     except:
         data = []
     st.session_state.cycle_data = data
     return data
 
-
-# ---------- Claude ----------
-
-def comprehensive_analysis(runs, garmin, daily_log, cycle_today=None):
-    client = anthropic.Anthropic(api_key=CLAUDE_API_KEY)
-
-    sleep_text = ""
-    hrv_text = ""
-    strength_text = ""
-
-    if garmin.get("sleep"):
-        s = garmin["sleep"]
-        sleep_text = f"睡眠（昨晚）：总时长 {s['total_hours']}h，深睡 {s['deep_min']}min，REM {s['rem_min']}min，体能电量变化 {s.get('body_battery_change', '未知')}，静息心率 {s.get('resting_hr', '未知')} bpm"
-
-    if garmin.get("hrv"):
-        h = garmin["hrv"]
-        hrv_text = f"HRV：昨晚均值 {h['last_night_avg']}，周均值 {h['weekly_avg']}，基准范围 {h['baseline_low']}-{h['baseline_high']}，状态 {h['status']}"
-
-    if garmin.get("strength"):
-        strength_text = f"最近力量训练：{json.dumps(garmin['strength'], ensure_ascii=False)}"
-
-    if cycle_today and cycle_today.get("cycle_phase"):
-        cycle_text = f"生理周期：{cycle_today['cycle_phase']}，第 {cycle_today.get('cycle_day', '?')} 天"
-    elif daily_log.get('cycle_day'):
-        cycle_text = f"生理周期：第 {daily_log.get('cycle_day', '未知')} 天，阶段 {daily_log.get('cycle_phase', '未知')}"
-    else:
-        cycle_text = ""
-    nutrition_text = f"今日摄入：{daily_log.get('nutrition_notes', '')}" if daily_log.get('nutrition_notes') else ""
-
-    recent_runs = runs[-5:] if len(runs) >= 5 else runs
-
-    # 跑步动态（Garmin 详细数据）
-    garmin_runs = garmin.get("garmin_runs", [])
-    form_text = ""
-    if garmin_runs:
-        gr = garmin_runs[0]
-        parts = []
-        if gr.get("cadence_spm"): parts.append(f"步频{gr['cadence_spm']}SPM")
-        if gr.get("stride_length_cm"): parts.append(f"步幅{gr['stride_length_cm']}cm")
-        if gr.get("vertical_oscillation_cm"): parts.append(f"垂直振幅{gr['vertical_oscillation_cm']}cm")
-        if gr.get("vertical_ratio_pct"): parts.append(f"垂直振幅比{gr['vertical_ratio_pct']}%")
-        if gr.get("ground_contact_ms"): parts.append(f"触地时间{gr['ground_contact_ms']}ms")
-        if gr.get("aerobic_te"): parts.append(f"有氧训练效果{gr['aerobic_te']}({gr.get('te_label','')})")
-        if gr.get("training_load"): parts.append(f"训练负荷{round(gr['training_load'])}")
-        if gr.get("stamina_start_pct"): parts.append(f"耐力{gr['stamina_start_pct']}%→{gr['stamina_end_pct']}%")
-        if garmin.get("vo2max"): parts.append(f"VO2Max={garmin['vo2max']}")
-        form_text = "最近一次跑步Garmin数据：" + "，".join(parts) if parts else ""
-    else:
-        cadences = [r["cadence"] for r in recent_runs if r.get("cadence")]
-        avg_cadence = round(sum(cadences)/len(cadences)) if cadences else None
-        form_text = f"近期平均步频 {avg_cadence} SPM" if avg_cadence else ""
-
-    days_left = (BERLIN_DATE - date.today()).days
-    goal_text = f"目标赛事：2026年9月27日柏林马拉松，距今 {days_left} 天（{days_left//7} 周）"
-
-    prompt = f"""你是我的个人运动与健康教练，请综合以下所有数据给出今日训练建议：
-
-【目标】{goal_text}
-
-【跑步（最近5次，含步频步幅）】
-{json.dumps(recent_runs, ensure_ascii=False, indent=2)}
-
-【{sleep_text}】
-【{hrv_text}】
-{f'【{strength_text}】' if strength_text else ''}
-{f'【{cycle_text}】' if cycle_text else ''}
-{f'【{nutrition_text}】' if nutrition_text else ''}
-{f'【{form_text}】' if form_text else ''}
-
-请用中文回答，分四部分：
-1. 今日身体状态评估（2-3句，考虑HRV、睡眠、生理周期）
-2. 今日训练建议（具体：跑/休/力量？配速？时长？结合备战柏林马拉松阶段）
-3. 跑步姿态反馈（步频是否达标170+？步幅是否合理？给出1条具体改进建议）
-4. 本周重点提醒（1-2条，围绕马拉松备战）
-
-语言简洁直接，像教练说话。"""
-
-    msg = client.messages.create(
-        model="claude-sonnet-4-6",
-        max_tokens=600,
-        messages=[{"role": "user", "content": prompt}]
-    )
-    return msg.content[0].text
+def fetch_body_data():
+    if "body_data" in st.session_state:
+        return st.session_state.body_data
+    try:
+        r = http_req.get(BODY_DATA_URL, timeout=10); r.raise_for_status()
+        data = r.json()
+    except:
+        data = []
+    st.session_state.body_data = data
+    return data
 
 
-def chat_with_claude(user_msg, runs, garmin, daily_log, history):
-    client = anthropic.Anthropic(api_key=CLAUDE_API_KEY)
-    system = f"""你是用户的个人运动与健康教练助手。以下是她的数据：
+# ══════════════════════════════════════════════════════
+# LOGIC HELPERS
+# ══════════════════════════════════════════════════════
 
-跑步数据（最近）：{json.dumps(runs[-10:], ensure_ascii=False)}
-Garmin健康数据：{json.dumps(garmin, ensure_ascii=False)}
-今日日志：{json.dumps(daily_log, ensure_ascii=False)}
+PHASE_INFO = {
+    "月经期": {"emoji":"🔴","color":"#ef4444","tip":"低能量期，适合轻松慢跑、瑜伽、散步。多补铁和水分。","hrv":"HRV 通常偏低，休息优先。"},
+    "卵泡期": {"emoji":"🌱","color":"#22c55e","tip":"精力逐渐上升，适合提速训练、力量训练。","hrv":"HRV 开始回升，身体恢复力强。"},
+    "排卵期": {"emoji":"⚡","color":"#f97316","tip":"精力巅峰！适合冲击配速 PR、高强度间歇。","hrv":"HRV 通常最高，训练适应性最好。"},
+    "黄体期": {"emoji":"🌙","color":"#a855f7","tip":"精力下降，体温升高。适合中低强度，重视睡眠。","hrv":"HRV 可能下降，不必强迫完成计划。"},
+}
 
-用中文回答，简洁实用，像教练一样直接给建议。"""
-    messages = [{"role": h["role"], "content": h["content"]} for h in history]
-    messages.append({"role": "user", "content": user_msg})
-    msg = client.messages.create(
-        model="claude-sonnet-4-6",
-        max_tokens=600,
-        system=system,
-        messages=messages
-    )
-    return msg.content[0].text
-
-
-# ---------- 侧边栏 ----------
-
-with st.sidebar:
-    st.markdown("### 💪 健康助手")
-    st.divider()
-    limit = st.slider("跑步记录数", 10, 100, 50)
-    refresh = st.button("🔄 刷新所有数据", use_container_width=True)
-    if refresh:
-        for key in ["runs", "garmin_data", "analysis"]:
-            if key in st.session_state:
-                del st.session_state[key]
-
-    st.divider()
-    st.markdown("**📅 今日日志**")
-
-    cycle_day = st.number_input("生理周期第几天", min_value=0, max_value=35, value=0, step=1)
-    cycle_phase = st.selectbox("周期阶段", ["未填写", "月经期", "卵泡期", "排卵期", "黄体期"])
-    nutrition_notes = st.text_area("今日摄入备注", placeholder="如：热量1800kcal，蛋白质80g，水2L", height=80)
-
-    daily_log = {
-        "cycle_day": cycle_day if cycle_day > 0 else None,
-        "cycle_phase": cycle_phase if cycle_phase != "未填写" else None,
-        "nutrition_notes": nutrition_notes if nutrition_notes.strip() else None,
-    }
-
-    st.divider()
-    st.caption("数据来源：Strava · Garmin")
-
-
-# ---------- 主内容 ----------
-
-st.markdown('<div class="page-title">💪 健康训练助手</div>', unsafe_allow_html=True)
-
-# 获取数据
-with st.spinner("连接 Strava..."):
-    strava = get_strava_client()
-
-if "runs" not in st.session_state:
-    with st.spinner("同步跑步数据..."):
-        st.session_state.runs = fetch_runs(strava, limit=limit)
-
-with st.spinner("同步 Garmin 数据..."):
-    garmin = fetch_garmin_data()
-
-cycle_history = fetch_cycle_data()
-today_str = str(date.today())
-today_date = date.today()
-
-# 自动推算经期阶段
 def predict_cycle(history):
-    period_starts = sorted([
-        e["date"] for e in history
-        if e.get("cycle_day") == 1 or e.get("is_period_start")
-    ])
-    if not period_starts:
-        return None
-
+    today_date = date.today()
+    period_starts = sorted([e["date"] for e in history if e.get("cycle_day")==1 or e.get("is_period_start")])
+    if not period_starts: return None
     last_start = date.fromisoformat(period_starts[-1])
-    days_since = (today_date - last_start).days + 1  # 周期第几天
-
-    # 计算平均周期长度
+    days_since = (today_date - last_start).days + 1
     if len(period_starts) >= 2:
         intervals = [(date.fromisoformat(period_starts[i+1]) - date.fromisoformat(period_starts[i])).days
                      for i in range(len(period_starts)-1)]
-        avg_cycle = round(sum(intervals) / len(intervals))
+        avg_cycle = round(sum(intervals)/len(intervals))
     else:
-        avg_cycle = 28  # 默认
-
-    # 如果超过一个周期，可能已进入新周期
-    actual_day = days_since if days_since <= avg_cycle else days_since % avg_cycle or avg_cycle
-    next_period = last_start + __import__('datetime').timedelta(days=avg_cycle - 1)
-
-    if actual_day <= 5:
-        phase = "月经期"
-    elif actual_day <= 13:
-        phase = "卵泡期"
-    elif actual_day <= 15:
-        phase = "排卵期"
-    else:
-        phase = "黄体期"
-
+        avg_cycle = 28
+    actual_day = days_since if days_since <= avg_cycle else (days_since % avg_cycle or avg_cycle)
+    next_period = last_start + timedelta(days=avg_cycle - 1)
+    if actual_day <= 5:    phase = "月经期"
+    elif actual_day <= 13: phase = "卵泡期"
+    elif actual_day <= 15: phase = "排卵期"
+    else:                  phase = "黄体期"
     return {
-        "cycle_day": actual_day,
-        "cycle_phase": phase,
-        "avg_cycle": avg_cycle,
-        "next_period": str(next_period),
-        "days_to_next": (next_period - today_date).days,
-        "is_new_cycle_possible": days_since > avg_cycle,
+        "cycle_day": actual_day, "cycle_phase": phase, "avg_cycle": avg_cycle,
+        "next_period": str(next_period), "days_to_next": (next_period - today_date).days,
     }
 
-cycle_pred = predict_cycle(cycle_history)
-cycle_today = next((e for e in reversed(cycle_history) if e.get("date") <= today_str), None)
-# 用预测结果填充 cycle_today（优先用预测）
-if cycle_pred:
-    cycle_today = {**(cycle_today or {}), **cycle_pred}
+def compute_readiness(garmin):
+    """0-100 readiness score from HRV, sleep, body battery"""
+    score = 50
+    hrv_data = garmin.get("hrv", {})
+    if hrv_data and hrv_data.get("last_night_avg"):
+        hrv_val  = hrv_data["last_night_avg"]
+        hrv_low  = hrv_data.get("baseline_low") or 35
+        hrv_high = hrv_data.get("baseline_high") or 55
+        hrv_mid  = (hrv_low + hrv_high) / 2
+        if hrv_val >= hrv_high:
+            contrib = 20 + min(5, (hrv_val - hrv_high) * 0.5)
+        elif hrv_val >= hrv_mid:
+            contrib = (hrv_val - hrv_mid) / (hrv_high - hrv_mid) * 20
+        elif hrv_val >= hrv_low:
+            contrib = -(hrv_mid - hrv_val) / (hrv_mid - hrv_low) * 10
+        else:
+            contrib = max(-15, -10 - (hrv_low - hrv_val)*0.5)
+        score += min(25, contrib)
+    sleep_data = garmin.get("sleep", {})
+    if sleep_data:
+        h = sleep_data.get("total_hours", 0) or 0
+        if h >= 8.5:   score += 20
+        elif h >= 7.5: score += 15
+        elif h >= 7.0: score += 10
+        elif h >= 6.5: score += 4
+        elif h >= 6.0: score += 0
+        elif h >= 5.0: score -= 8
+        else:          score -= 15
+        bb = sleep_data.get("body_battery_change")
+        if bb: score += min(10, max(-10, (bb or 0) * 0.15))
+    return max(0, min(100, round(score)))
+
+def readiness_color(s):
+    if s >= 75: return "#2d4a3e"
+    if s >= 55: return "#b8952a"
+    return "#c0543a"
+
+def readiness_label(s):
+    if s >= 80: return "状态极佳"
+    if s >= 65: return "状态良好"
+    if s >= 50: return "一般恢复"
+    return "需要休息"
+
+
+# ══════════════════════════════════════════════════════
+# CLAUDE FUNCTIONS
+# ══════════════════════════════════════════════════════
+
+def comprehensive_analysis(runs, garmin, cycle_today):
+    client = anthropic.Anthropic(api_key=CLAUDE_API_KEY)
+    sleep_text = hrv_text = form_text = cycle_text = ""
+    if garmin.get("sleep"):
+        s = garmin["sleep"]
+        sleep_text = f"睡眠：{s['total_hours']}h，深睡{s['deep_min']}min，体能电量变化{s.get('body_battery_change','?')}"
+    if garmin.get("hrv"):
+        h = garmin["hrv"]
+        hrv_text = f"HRV：{h['last_night_avg']}（基准{h['baseline_low']}-{h['baseline_high']}，{h['status']}）"
+    if cycle_today and cycle_today.get("cycle_phase"):
+        cycle_text = f"生理周期：{cycle_today['cycle_phase']}第{cycle_today.get('cycle_day','?')}天"
+    garmin_runs = garmin.get("garmin_runs", [])
+    if garmin_runs:
+        gr = garmin_runs[0]; parts = []
+        if gr.get("cadence_spm"):            parts.append(f"步频{gr['cadence_spm']}SPM")
+        if gr.get("stride_length_cm"):       parts.append(f"步幅{gr['stride_length_cm']}cm")
+        if gr.get("vertical_oscillation_cm"):parts.append(f"垂直振幅{gr['vertical_oscillation_cm']}cm")
+        if gr.get("vertical_ratio_pct"):     parts.append(f"垂直比{gr['vertical_ratio_pct']}%")
+        if gr.get("ground_contact_ms"):      parts.append(f"触地{gr['ground_contact_ms']}ms")
+        if garmin.get("vo2max"):             parts.append(f"VO2Max={garmin['vo2max']}")
+        form_text = "跑步动态：" + "，".join(parts) if parts else ""
+    days_left = (BERLIN_DATE - date.today()).days
+    recent = runs[-5:] if len(runs) >= 5 else runs
+    prompt = f"""你是我的个人运动教练，请综合数据给今日建议：
+目标：{days_left}天后柏林马拉松（2026.9.27）
+{sleep_text}
+{hrv_text}
+{cycle_text}
+{form_text}
+最近跑步：{json.dumps(recent, ensure_ascii=False)}
+
+请用中文，分三部分各1-2句：
+【读身体】当前身体状态（结合HRV睡眠周期）
+【训练】今日具体建议（跑/休/力量？配速距离？）
+【跑姿】步频步幅等数据反馈+1条改进建议
+语言简洁，像教练说话。"""
+    msg = client.messages.create(model="claude-sonnet-4-6", max_tokens=500, messages=[{"role":"user","content":prompt}])
+    return msg.content[0].text
+
+def chat_with_claude(user_msg, runs, garmin, cycle_today, history):
+    client = anthropic.Anthropic(api_key=CLAUDE_API_KEY)
+    system = f"""你是用户的个人运动健康教练。数据：
+跑步：{json.dumps(runs[-8:], ensure_ascii=False)}
+Garmin：{json.dumps({k:v for k,v in garmin.items() if k!='garmin_runs'}, ensure_ascii=False)}
+周期：{json.dumps(cycle_today, ensure_ascii=False)}
+用中文简洁直接回答，像教练风格。"""
+    msgs = [{"role":h["role"],"content":h["content"]} for h in history]
+    msgs.append({"role":"user","content":user_msg})
+    msg = client.messages.create(model="claude-sonnet-4-6", max_tokens=500, system=system, messages=msgs)
+    return msg.content[0].text
+
+
+# ══════════════════════════════════════════════════════
+# SIDEBAR
+# ══════════════════════════════════════════════════════
+
+with st.sidebar:
+    st.markdown("### 健康助手")
+    st.divider()
+    limit = st.slider("跑步记录数", 10, 100, 50)
+    if st.button("🔄 刷新数据", use_container_width=True):
+        for k in ["runs","garmin_data","cycle_data","body_data","analysis"]:
+            if k in st.session_state: del st.session_state[k]
+        st.rerun()
+    st.divider()
+    st.caption("数据来源：Strava · Garmin Connect")
+    st.caption("每日运行 update_garmin.py 更新")
+
+
+# ══════════════════════════════════════════════════════
+# LOAD DATA
+# ══════════════════════════════════════════════════════
+
+with st.spinner("同步数据..."):
+    strava = get_strava_client()
+    if "runs" not in st.session_state:
+        st.session_state.runs = fetch_runs(strava, limit=limit)
+    garmin = fetch_garmin_data()
+    cycle_history = fetch_cycle_data()
+    body_history  = fetch_body_data()
 
 runs = st.session_state.runs
-last_run = runs[-1]["date"] if runs else "无"
-st.markdown(f'<div class="page-subtitle">最近 {len(runs)} 次跑步 · {last_run} · Garmin {garmin.get("date", "")}</div>', unsafe_allow_html=True)
+cycle_pred  = predict_cycle(cycle_history)
+today_str   = str(date.today())
+cycle_today_raw = next((e for e in reversed(cycle_history) if e.get("date") <= today_str), None)
+cycle_today = {**(cycle_today_raw or {}), **(cycle_pred or {})}
 
-# 统计行
-total_km = round(sum(r["distance"] for r in runs), 1)
-valid_paces = [r["pace"] for r in runs if r["pace"]]
-avg_pace = round(sum(valid_paces) / len(valid_paces), 2) if valid_paces else 0
-sleep_h = garmin.get("sleep", {}).get("total_hours", "—") if garmin.get("sleep") else "—"
-hrv_val = garmin.get("hrv", {}).get("last_night_avg", "—") if garmin.get("hrv") else "—"
-hrv_status = garmin.get("hrv", {}).get("status", "") if garmin.get("hrv") else ""
+readiness = compute_readiness(garmin)
+r_color   = readiness_color(readiness)
+r_label   = readiness_label(readiness)
 
-c1, c2, c3, c4, c5, c6 = st.columns(6)
-with c1:
-    st.markdown(f'<div class="stat-card orange"><div class="stat-value">{total_km}</div><div class="stat-label">总里程 km</div></div>', unsafe_allow_html=True)
-with c2:
-    st.markdown(f'<div class="stat-card green"><div class="stat-value">{len(runs)}</div><div class="stat-label">跑步次数</div></div>', unsafe_allow_html=True)
-with c3:
-    st.markdown(f'<div class="stat-card blue"><div class="stat-value">{avg_pace}</div><div class="stat-label">平均配速</div></div>', unsafe_allow_html=True)
-with c4:
-    st.markdown(f'<div class="stat-card teal"><div class="stat-value">{sleep_h}</div><div class="stat-label">睡眠时长 h</div></div>', unsafe_allow_html=True)
-with c5:
-    hrv_color = "green" if "BALANCED" in hrv_status else "red"
-    st.markdown(f'<div class="stat-card {hrv_color}"><div class="stat-value">{hrv_val}</div><div class="stat-label">HRV 昨晚</div></div>', unsafe_allow_html=True)
-with c6:
-    bb = garmin.get("sleep", {}).get("body_battery_change", "—") if garmin.get("sleep") else "—"
-    bb_color = "green" if isinstance(bb, (int, float)) and bb > 0 else "red"
-    st.markdown(f'<div class="stat-card {bb_color}"><div class="stat-value">{bb}</div><div class="stat-label">体能电量变化</div></div>', unsafe_allow_html=True)
-
-st.markdown("<br>", unsafe_allow_html=True)
-
-# 柏林马拉松倒计时
 days_to_berlin = (BERLIN_DATE - date.today()).days
 weeks_to_berlin = days_to_berlin // 7
-# 训练阶段判断
-if days_to_berlin > 70:
-    phase_name, phase_color, phase_tip = "基础积累期", "#3b82f6", "打好有氧底子，轻松跑占80%，每周稳步增量不超过10%"
-elif days_to_berlin > 28:
-    phase_name, phase_color, phase_tip = "专项训练期", "#f97316", "加入马配跑、长距离节奏跑，每周一次20km+长跑"
-elif days_to_berlin > 7:
-    phase_name, phase_color, phase_tip = "减量期 🎯", "#22c55e", "大幅减量，保持感觉，不要加练！信任你的训练积累"
-else:
-    phase_name, phase_color, phase_tip = "赛前最后一周", "#ef4444", "轻松慢跑保持状态，检查装备，提前取号"
 
 recent_4w = [r for r in runs if r["date"] >= str(date.today() - timedelta(days=28))]
-weekly_km = round(sum(r["distance"] for r in recent_4w) / 4, 1)
+weekly_km = round(sum(r["distance"] for r in recent_4w)/4, 1) if recent_4w else 0
 
-st.markdown(f"""
-<div style="background:linear-gradient(135deg,#1a1a2e,#16213e);border-radius:16px;padding:20px 24px;margin-bottom:20px;color:white;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+
+# ══════════════════════════════════════════════════════
+# HEADER
+# ══════════════════════════════════════════════════════
+
+today_display = date.today().strftime("今日 · %Y-%m-%d")
+phase_now = cycle_today.get("cycle_phase","")
+phase_info = PHASE_INFO.get(phase_now, {})
+cycle_day_now = cycle_today.get("cycle_day","")
+
+col_h1, col_h2 = st.columns([3, 1])
+with col_h1:
+    st.markdown(f'<div style="font-size:1.8rem;font-weight:800;color:#1a1a1a;margin-bottom:2px">{today_display}</div>', unsafe_allow_html=True)
+with col_h2:
+    if phase_now:
+        st.markdown(f'<div style="text-align:right;padding-top:8px"><div style="font-size:0.75rem;color:#6b7280">D{cycle_day_now}</div><div style="font-size:0.85rem;font-weight:600;color:{phase_info.get("color","#333")}">{phase_info.get("emoji","")} {phase_now}</div></div>', unsafe_allow_html=True)
+
+# Berlin banner
+if days_to_berlin > 7:
+    if days_to_berlin > 70:   train_phase, phase_tip_b = "基础期", "有氧为主，每周稳步增量"
+    elif days_to_berlin > 28: train_phase, phase_tip_b = "专项期", "马配跑+长距离节奏跑"
+    else:                     train_phase, phase_tip_b = "减量期 🎯", "大幅减量，信任积累"
+    st.markdown(f"""
+<div class="berlin-banner">
   <div>
-    <div style="font-size:0.8rem;opacity:0.6;letter-spacing:0.1em;margin-bottom:4px">🎯 目标赛事</div>
-    <div style="font-size:1.3rem;font-weight:700">柏林马拉松 2026</div>
-    <div style="font-size:0.85rem;opacity:0.7;margin-top:2px">2026年9月27日</div>
+    <div style="font-size:0.7rem;opacity:0.5;letter-spacing:0.1em">🎯 目标赛事</div>
+    <div style="font-size:1.1rem;font-weight:700">柏林马拉松 2026</div>
+    <div style="font-size:0.78rem;opacity:0.6;margin-top:2px">{train_phase} · {phase_tip_b}</div>
   </div>
   <div style="text-align:center">
-    <div style="font-size:2.5rem;font-weight:800;color:#f97316">{days_to_berlin}</div>
-    <div style="font-size:0.75rem;opacity:0.6">天后</div>
+    <div style="font-size:2.2rem;font-weight:800;color:#c8a84b">{days_to_berlin}</div>
+    <div style="font-size:0.7rem;opacity:0.5">天</div>
   </div>
   <div style="text-align:center">
-    <div style="font-size:2rem;font-weight:700;color:#22c55e">{weeks_to_berlin}</div>
-    <div style="font-size:0.75rem;opacity:0.6">周</div>
-  </div>
-  <div style="flex:1;min-width:200px">
-    <div style="display:inline-block;background:{phase_color}33;border:1px solid {phase_color};border-radius:8px;padding:4px 12px;font-size:0.8rem;color:{phase_color};font-weight:600;margin-bottom:6px">{phase_name}</div>
-    <div style="font-size:0.82rem;opacity:0.8">{phase_tip}</div>
+    <div style="font-size:1.6rem;font-weight:700;color:#7ecfaa">{weeks_to_berlin}</div>
+    <div style="font-size:0.7rem;opacity:0.5">周</div>
   </div>
   <div style="text-align:center">
-    <div style="font-size:1.6rem;font-weight:700;color:#a855f7">{weekly_km}</div>
-    <div style="font-size:0.75rem;opacity:0.6">近4周均周跑量 km</div>
+    <div style="font-size:1.6rem;font-weight:700;color:#9bb8ac">{weekly_km}</div>
+    <div style="font-size:0.7rem;opacity:0.5">近4周均周km</div>
   </div>
 </div>
 """, unsafe_allow_html=True)
 
-# 主区域三列
-left, mid, right = st.columns([2, 2, 2])
 
-with left:
-    st.markdown("**📈 跑步数据**")
-    df = pd.DataFrame(runs)
-    df["date"] = pd.to_datetime(df["date"])
-    tab1, tab2, tab3 = st.tabs(["配速趋势", "距离", "步频"])
-    with tab1:
-        st.line_chart(df.set_index("date")["pace"], color="#f97316", height=160)
-    with tab2:
-        st.bar_chart(df.set_index("date")["distance"], color="#22c55e", height=160)
-    with tab3:
-        df_cad = df[df["cadence"].notna()]
-        if not df_cad.empty:
-            st.line_chart(df_cad.set_index("date")["cadence"], color="#a855f7", height=160)
-            avg_cad = round(df_cad["cadence"].mean())
-            cad_color = "#22c55e" if avg_cad >= 170 else "#f97316" if avg_cad >= 160 else "#ef4444"
-            tip = "✅ 步频理想（170-180 SPM）" if avg_cad >= 170 else "⚠️ 步频偏低，尝试提高至 170+ SPM" if avg_cad >= 160 else "❗步频过低，建议刻意练习提频"
-            st.markdown(f'<div style="font-size:0.85rem;color:{cad_color};padding:4px 0">{tip}（均值 {avg_cad} SPM）</div>', unsafe_allow_html=True)
+# ══════════════════════════════════════════════════════
+# TABS
+# ══════════════════════════════════════════════════════
+
+tab_today, tab_trend, tab_body = st.tabs(["♥ 今日", "📈 趋势", "💪 身体"])
+
+
+# ──────────────────────────────────────────────────────
+# TAB: 今日
+# ──────────────────────────────────────────────────────
+
+with tab_today:
+    col_left, col_right = st.columns([1, 2])
+
+    with col_left:
+        # Readiness circle
+        circumference = 2 * 3.14159 * 48
+        dash = circumference * readiness / 100
+        gap  = circumference - dash
+        offset = circumference * 0.25
+
+        sleep_h = garmin.get("sleep",{}).get("total_hours","—") if garmin.get("sleep") else "—"
+        hrv_v   = garmin.get("hrv",{}).get("last_night_avg","—") if garmin.get("hrv") else "—"
+
+        st.markdown(f"""
+<div class="card" style="text-align:center;padding:28px 20px">
+  <svg viewBox="0 0 120 120" width="150" height="150" style="margin:0 auto;display:block">
+    <circle cx="60" cy="60" r="48" fill="none" stroke="#e8e2d6" stroke-width="9"/>
+    <circle cx="60" cy="60" r="48" fill="none" stroke="{r_color}" stroke-width="9"
+      stroke-dasharray="{dash:.1f} {gap:.1f}"
+      stroke-dashoffset="{offset:.1f}"
+      stroke-linecap="round" transform="rotate(-90 60 60)"/>
+    <text x="60" y="56" text-anchor="middle" font-family="Inter,sans-serif" font-size="28" font-weight="800" fill="#1a1a1a">{readiness}</text>
+    <text x="60" y="71" text-anchor="middle" font-family="Inter,sans-serif" font-size="9" fill="#9ca3af" letter-spacing="2">READINESS</text>
+  </svg>
+  <div style="font-size:0.9rem;font-weight:600;color:{r_color};margin-top:8px">{r_label}</div>
+  <div style="margin-top:12px;display:flex;justify-content:center;gap:20px">
+    <div class="mini-stat"><div class="val">{sleep_h}</div><div class="lbl">睡眠 h</div></div>
+    <div class="mini-stat"><div class="val">{hrv_v}</div><div class="lbl">HRV</div></div>
+  </div>
+</div>
+""", unsafe_allow_html=True)
+
+        # Status pills
+        pills_html = ""
+        if garmin.get("sleep") and garmin["sleep"].get("total_hours"):
+            h = garmin["sleep"]["total_hours"]
+            cls = "pill-green" if h >= 7 else "pill-orange" if h >= 6 else "pill-red"
+            pills_html += f'<span class="pill {cls}">睡眠 {h}h</span>'
+        if garmin.get("hrv") and garmin["hrv"].get("status"):
+            status = garmin["hrv"]["status"]
+            cls = "pill-green" if "BALANCED" in status else "pill-red"
+            pills_html += f'<span class="pill {cls}">HRV {"平衡" if "BALANCED" in status else "偏低"}</span>'
+        if phase_now:
+            pills_html += f'<span class="pill pill-beige">{phase_info.get("emoji","")} {phase_now}</span>'
+        if days_to_berlin <= 14:
+            pills_html += f'<span class="pill pill-red">全马·还有 {days_to_berlin} 天</span>'
+        elif days_to_berlin <= 42:
+            pills_html += f'<span class="pill pill-orange">全马·还有 {days_to_berlin} 天</span>'
         else:
-            st.info("暂无步频数据")
+            pills_html += f'<span class="pill pill-beige">全马·还有 {days_to_berlin} 天</span>'
 
-    with st.expander("所有跑步记录"):
-        cols = ["date","distance","pace","heartrate","cadence","stride_cm"]
-        cols_exist = [c for c in cols if c in df.columns]
-        d = df[cols_exist].rename(columns={"date":"日期","distance":"距离km","pace":"配速","heartrate":"心率","cadence":"步频","stride_cm":"步幅cm"})
-        d["日期"] = d["日期"].dt.strftime("%m-%d")
-        st.dataframe(d, hide_index=True, use_container_width=True)
+        if pills_html:
+            st.markdown(f'<div style="margin-top:4px">{pills_html}</div>', unsafe_allow_html=True)
 
-with mid:
-    st.markdown("**🌙 健康数据**")
+    with col_right:
+        # Claude analysis
+        if "analysis" not in st.session_state:
+            with st.spinner("Claude 分析中..."):
+                st.session_state.analysis = comprehensive_analysis(runs, garmin, cycle_today)
 
-    if garmin.get("error"):
-        st.error(f"Garmin 认证失败: {garmin['error']}")
-    if garmin.get("errors"):
-        for err in garmin["errors"]:
-            st.warning(err)
+        raw = st.session_state.analysis
+        # Parse sections
+        import re
+        sections = re.split(r'【(读身体|训练|跑姿)】', raw)
+        if len(sections) >= 4:
+            label_map = {"读身体":"🩺 读身体","训练":"🏃 训练","跑姿":"👟 跑姿"}
+            for i in range(1, len(sections)-1, 2):
+                lbl = sections[i]; txt = sections[i+1].strip()
+                st.markdown(f'<div class="ai-block"><div class="ai-label">{label_map.get(lbl,lbl)}</div>{txt}</div>', unsafe_allow_html=True)
+        else:
+            st.markdown(f'<div class="ai-block">{raw.replace(chr(10),"<br>")}</div>', unsafe_allow_html=True)
 
-    if garmin.get("sleep"):
-        s = garmin["sleep"]
-        st.markdown(f"""<div class="health-card">
-            <h4>昨晚睡眠</h4>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-                <div><div style="font-size:1.4rem;font-weight:700">{s['total_hours']}h</div><div style="color:#6b7280;font-size:0.75rem">总睡眠</div></div>
-                <div><div style="font-size:1.4rem;font-weight:700">{s['deep_min']}min</div><div style="color:#6b7280;font-size:0.75rem">深睡</div></div>
-                <div><div style="font-size:1.4rem;font-weight:700">{s['rem_min']}min</div><div style="color:#6b7280;font-size:0.75rem">REM</div></div>
-                <div><div style="font-size:1.4rem;font-weight:700">{s.get('resting_hr','—')}</div><div style="color:#6b7280;font-size:0.75rem">静息心率</div></div>
-            </div></div>""", unsafe_allow_html=True)
+        if st.button("🔄 重新分析", key="reanalyze"):
+            if "analysis" in st.session_state: del st.session_state["analysis"]
+            st.rerun()
 
-    if garmin.get("hrv"):
-        h = garmin["hrv"]
-        status_color = "#22c55e" if "BALANCED" in (h['status'] or '') else "#ef4444"
-        status_text = "平衡" if "BALANCED" in (h['status'] or '') else "不平衡"
-        st.markdown(f"""<div class="health-card">
-            <h4>HRV 状态</h4>
-            <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
-                <div style="font-size:2rem;font-weight:700">{h['last_night_avg']}</div>
-                <div><div style="color:{status_color};font-weight:600">{status_text}</div>
-                <div style="color:#6b7280;font-size:0.75rem">基准 {h['baseline_low']}-{h['baseline_high']}</div></div>
-            </div>
-            <div style="color:#6b7280;font-size:0.8rem">周均值 {h['weekly_avg']}</div>
-        </div>""", unsafe_allow_html=True)
+    st.divider()
 
-    # VO2Max
-    if garmin.get("vo2max"):
-        vo2 = garmin["vo2max"]
-        vo2_level = "精英" if vo2 >= 60 else "优秀" if vo2 >= 52 else "良好" if vo2 >= 44 else "一般"
-        st.markdown(f"""<div class="health-card">
-            <h4>VO2Max</h4>
-            <div style="display:flex;align-items:center;gap:12px;">
-                <div style="font-size:2rem;font-weight:700;color:#3b82f6">{vo2}</div>
-                <div style="color:#6b7280;font-size:0.85rem">mL/kg/min · {vo2_level}</div>
-            </div>
-        </div>""", unsafe_allow_html=True)
-
-    # 跑步动态（最近一次）
-    garmin_runs = garmin.get("garmin_runs", [])
-    if garmin_runs:
-        gr = garmin_runs[0]
-        def fmt(v, unit="", decimals=1):
-            return f"{round(v, decimals)}{unit}" if v is not None else "—"
-        def mc(val, good_min, good_max):
-            if val is None: return "#6b7280"
-            return "#22c55e" if good_min <= val <= good_max else "#f97316"
-        def mc_lt(val, threshold):  # good = below threshold
-            if val is None: return "#6b7280"
-            return "#22c55e" if val <= threshold else "#f97316"
-
-        cad = gr.get("cadence_spm")
-        sl  = gr.get("stride_length_cm")
-        vo  = gr.get("vertical_oscillation_cm")
-        vr  = gr.get("vertical_ratio_pct")
-        gct = gr.get("ground_contact_ms")
-        te  = gr.get("aerobic_te")
-        ate = gr.get("anaerobic_te")
-        tl  = gr.get("training_load")
-        te_label = gr.get("te_label", "")
-        pw  = gr.get("avg_power_w")
-        np_ = gr.get("normalized_power_w")
-        s_start = gr.get("stamina_start_pct")
-        s_end   = gr.get("stamina_end_pct")
-        bb  = gr.get("body_battery_change")
-
-        te_labels_cn = {
-            "TEMPO": "节奏跑", "BASE": "基础有氧", "RECOVERY": "恢复",
-            "THRESHOLD": "乳酸阈", "INTERVAL": "间歇", "VO2MAX": "VO2Max"
-        }
-        te_label_cn = te_labels_cn.get(te_label, te_label)
-
-        st.markdown(f"""<div class="health-card">
-            <h4>跑步动态 · {gr['date']} · {gr.get('name','')}</h4>
-            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:10px;">
-                <div>
-                    <div style="font-size:1.15rem;font-weight:700;color:{mc(cad,170,185)}">{fmt(cad,'',0)}</div>
-                    <div style="color:#6b7280;font-size:0.7rem">步频 SPM</div>
-                    <div style="font-size:0.68rem;color:#9ca3af">理想 170-180</div>
-                </div>
-                <div>
-                    <div style="font-size:1.15rem;font-weight:700;color:#3b82f6">{fmt(sl,'cm',0)}</div>
-                    <div style="color:#6b7280;font-size:0.7rem">步幅</div>
-                </div>
-                <div>
-                    <div style="font-size:1.15rem;font-weight:700;color:{mc_lt(gct,250)}">{fmt(gct,'ms',0)}</div>
-                    <div style="color:#6b7280;font-size:0.7rem">触地时间</div>
-                    <div style="font-size:0.68rem;color:#9ca3af">理想 &lt;250ms</div>
-                </div>
-                <div>
-                    <div style="font-size:1.15rem;font-weight:700;color:{mc(vo,6,9)}">{fmt(vo,'cm')}</div>
-                    <div style="color:#6b7280;font-size:0.7rem">垂直振幅</div>
-                    <div style="font-size:0.68rem;color:#9ca3af">理想 6-9cm</div>
-                </div>
-                <div>
-                    <div style="font-size:1.15rem;font-weight:700;color:{mc_lt(vr,8.5)}">{fmt(vr,'%')}</div>
-                    <div style="color:#6b7280;font-size:0.7rem">垂直振幅比</div>
-                    <div style="font-size:0.68rem;color:#9ca3af">理想 &lt;8.5%</div>
-                </div>
-                <div>
-                    <div style="font-size:1.15rem;font-weight:700;color:#a855f7">{fmt(pw,'W',0)}</div>
-                    <div style="color:#6b7280;font-size:0.7rem">平均功率</div>
-                </div>
-            </div>
-            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;border-top:1px solid #f3f4f6;padding-top:10px;">
-                <div>
-                    <div style="font-size:1.15rem;font-weight:700;color:#f97316">{fmt(te,'',1)}</div>
-                    <div style="color:#6b7280;font-size:0.7rem">有氧效果 {te_label_cn}</div>
-                </div>
-                <div>
-                    <div style="font-size:1.15rem;font-weight:700;color:#6b7280">{fmt(ate,'',1)}</div>
-                    <div style="color:#6b7280;font-size:0.7rem">无氧效果</div>
-                </div>
-                <div>
-                    <div style="font-size:1.15rem;font-weight:700;color:#14b8a6">{fmt(tl,'',0)}</div>
-                    <div style="color:#6b7280;font-size:0.7rem">训练负荷</div>
-                </div>
-                <div>
-                    <div style="font-size:1.15rem;font-weight:700;color:#22c55e">{fmt(s_start,'%',0)} → {fmt(s_end,'%',0)}</div>
-                    <div style="color:#6b7280;font-size:0.7rem">耐力消耗</div>
-                </div>
-                <div>
-                    <div style="font-size:1.15rem;font-weight:700;color:{'#ef4444' if bb and bb<0 else '#22c55e'}">{fmt(bb,'',0)}</div>
-                    <div style="color:#6b7280;font-size:0.7rem">体能电量变化</div>
-                </div>
-                <div>
-                    <div style="font-size:1.15rem;font-weight:700;color:#3b82f6">{gr.get('steps','—')}</div>
-                    <div style="color:#6b7280;font-size:0.7rem">总步数</div>
-                </div>
-            </div>
-        </div>""", unsafe_allow_html=True)
-
-    if garmin.get("strength"):
-        st.markdown('<div class="health-card"><h4>最近力量训练</h4>', unsafe_allow_html=True)
-        for s in garmin["strength"][:3]:
-            st.markdown(f"🏋️ **{s['date']}** {s['name']} · {s['duration_min']}min", unsafe_allow_html=False)
-        st.markdown('</div>', unsafe_allow_html=True)
-    elif not garmin.get("strength"):
-        st.info("最近50次活动中无力量训练记录")
-
-    # 经期板块
-    st.markdown("---")
-    phase = cycle_today.get("cycle_phase") if cycle_today else None
-    cycle_day = cycle_today.get("cycle_day") if cycle_today else None
-    info = PHASE_INFO.get(phase, {})
-    is_predicted = cycle_pred is not None  # 是否来自自动预测
-
-    if phase and info:
-        next_period = cycle_today.get("next_period")
-        days_to_next = cycle_today.get("days_to_next")
-        avg_cycle_len = cycle_today.get("avg_cycle", 28)
-        pred_badge = '<span style="font-size:0.7rem;background:#e0e7ff;color:#4f46e5;padding:1px 6px;border-radius:10px;margin-left:6px">AI 预测</span>' if is_predicted else ''
-
-        next_period_str = ""
-        if next_period and days_to_next is not None:
-            if days_to_next < 0:
-                next_period_str = f'<div style="font-size:0.78rem;color:#ef4444;margin-top:4px">⚠️ 预计经期已逾期 {-days_to_next} 天（请标记新周期）</div>'
-            elif days_to_next == 0:
-                next_period_str = '<div style="font-size:0.78rem;color:#ef4444;margin-top:4px">🔴 预计今天经期开始</div>'
-            elif days_to_next <= 3:
-                next_period_str = f'<div style="font-size:0.78rem;color:#f97316;margin-top:4px">📅 预计 {days_to_next} 天后经期（{next_period}）</div>'
-            else:
-                next_period_str = f'<div style="font-size:0.78rem;color:#6b7280;margin-top:4px">📅 预计下次经期：{next_period}（{days_to_next} 天后）</div>'
-
-        st.markdown(f"""<div class="health-card">
-            <h4>经期状态{pred_badge}</h4>
-            <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
-                <span style="font-size:1.8rem">{info['emoji']}</span>
-                <div>
-                    <div style="font-size:1.1rem;font-weight:700;color:{info['color']}">{phase}</div>
-                    <div style="color:#6b7280;font-size:0.8rem">第 {cycle_day or '?'} 天 · 平均周期 {avg_cycle_len} 天</div>
-                </div>
-            </div>
-            <div style="font-size:0.85rem;color:#374151;margin-bottom:6px">{info['tip']}</div>
-            <div style="font-size:0.8rem;color:#6b7280;margin-bottom:4px">{info['hrv']}</div>
-            {next_period_str}
-        </div>""", unsafe_allow_html=True)
-    else:
-        st.markdown('<div class="health-card"><h4>经期状态</h4><div style="color:#9ca3af;font-size:0.85rem">运行 update_garmin.py 并回答"今天是否经期第一天？"即可开始追踪，App 将自动推算阶段</div></div>', unsafe_allow_html=True)
-
-    # 历史对比图
-    if len(cycle_history) >= 3:
-        st.markdown("**📊 经期 × HRV 趋势**")
-        df_cycle = pd.DataFrame(cycle_history)
-        df_cycle = df_cycle[df_cycle["hrv"].notna()].copy()
-        if not df_cycle.empty:
-            df_cycle["date"] = pd.to_datetime(df_cycle["date"])
-            phase_color_map = {"月经期": 1, "卵泡期": 2, "排卵期": 3, "黄体期": 4}
-            df_cycle["phase_num"] = df_cycle["cycle_phase"].map(phase_color_map)
-            st.line_chart(df_cycle.set_index("date")[["hrv"]], color=["#a855f7"], height=150)
-
-with right:
+    # Chat
     st.markdown("**💬 问 Claude**")
-
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
 
-    chat_container = st.container(height=340)
+    chat_container = st.container(height=280)
     with chat_container:
         if not st.session_state.chat_history:
-            st.markdown("""<div style="color:#9ca3af;font-size:0.85rem;padding:8px 0;">
-            💡 试试问：<br>· 今天适合跑步吗？<br>· 经期该怎么训练？<br>· 我的HRV偏低怎么办？
-            </div>""", unsafe_allow_html=True)
+            st.markdown('<div style="color:#9ca3af;font-size:0.85rem;padding:8px 0">💡 试试问：今天适合跑步吗？ · 经期该怎么训练？ · 我的HRV偏低怎么办？</div>', unsafe_allow_html=True)
         for msg in st.session_state.chat_history:
-            if msg["role"] == "user":
-                st.markdown(f'<div class="chat-user">{msg["content"]}</div>', unsafe_allow_html=True)
-            else:
-                st.markdown(f'<div class="chat-ai">{msg["content"].replace(chr(10),"<br>")}</div>', unsafe_allow_html=True)
+            cls = "chat-user" if msg["role"]=="user" else "chat-ai"
+            content = msg["content"].replace(chr(10),"<br>")
+            st.markdown(f'<div class="{cls}">{content}</div>', unsafe_allow_html=True)
 
-    with st.form("chat_form", clear_on_submit=True):
-        col_i, col_b = st.columns([5, 1])
-        with col_i:
-            user_input = st.text_input("", placeholder="问点什么...", label_visibility="collapsed")
-        with col_b:
-            send = st.form_submit_button("发")
+    col_ci, col_cb, col_cc = st.columns([5,1,1])
+    with col_ci:
+        user_input = st.text_input("chat", placeholder="输入问题...", label_visibility="collapsed", key="chat_input")
+    with col_cb:
+        send = st.button("发送", key="chat_send")
+    with col_cc:
+        if st.button("清空", key="chat_clear"):
+            st.session_state.chat_history = []; st.rerun()
 
     if send and user_input.strip():
-        st.session_state.chat_history.append({"role": "user", "content": user_input})
+        st.session_state.chat_history.append({"role":"user","content":user_input})
         with st.spinner(""):
-            reply = chat_with_claude(user_input, runs, garmin, daily_log, st.session_state.chat_history[:-1])
-        st.session_state.chat_history.append({"role": "assistant", "content": reply})
+            reply = chat_with_claude(user_input, runs, garmin, cycle_today, st.session_state.chat_history[:-1])
+        st.session_state.chat_history.append({"role":"assistant","content":reply})
         st.rerun()
 
-    if st.session_state.chat_history:
-        if st.button("清空", use_container_width=True):
-            st.session_state.chat_history = []
-            st.rerun()
 
-# Claude 综合分析
-st.divider()
-if "analysis" not in st.session_state:
-    with st.spinner("Claude 综合分析中..."):
-        st.session_state.analysis = comprehensive_analysis(runs, garmin, daily_log, cycle_today)
+# ──────────────────────────────────────────────────────
+# TAB: 趋势
+# ──────────────────────────────────────────────────────
 
-st.markdown(f"""
-<div class="analysis-card">
-    <h3>✨ CLAUDE 今日综合建议</h3>
-    <p>{st.session_state.analysis.replace(chr(10), '<br>')}</p>
+with tab_trend:
+    df = pd.DataFrame(runs)
+    df["date"] = pd.to_datetime(df["date"])
+
+    # Time range selector
+    range_days = st.radio("时间范围", ["14天","30天","全部"], horizontal=True, index=1)
+    cutoff = {"14天": 14, "30天": 30, "全部": 9999}[range_days]
+    df_f = df[df["date"] >= pd.Timestamp(date.today() - timedelta(days=cutoff))]
+
+    c1, c2 = st.columns(2)
+    with c1:
+        st.markdown('<div class="card"><h4>配速趋势 (min/km)</h4>', unsafe_allow_html=True)
+        if not df_f.empty:
+            st.line_chart(df_f.set_index("date")["pace"], color="#2d4a3e", height=160)
+        st.markdown('</div>', unsafe_allow_html=True)
+
+        st.markdown('<div class="card"><h4>步频趋势 (SPM)</h4>', unsafe_allow_html=True)
+        df_cad = df_f[df_f["cadence"].notna()]
+        if not df_cad.empty:
+            st.line_chart(df_cad.set_index("date")["cadence"], color="#b8952a", height=160)
+            avg_cad = round(df_cad["cadence"].mean())
+            cad_ok = avg_cad >= 170
+            tip = f"{'✅' if cad_ok else '⚠️'} 均值 {avg_cad} SPM {'（理想）' if cad_ok else '（建议提至170+）'}"
+            st.markdown(f'<div style="font-size:0.82rem;color:{"#2d4a3e" if cad_ok else "#c0543a"}">{tip}</div>', unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
+
+    with c2:
+        st.markdown('<div class="card"><h4>跑量 (km)</h4>', unsafe_allow_html=True)
+        if not df_f.empty:
+            st.bar_chart(df_f.set_index("date")["distance"], color="#c8a84b", height=160)
+        st.markdown('</div>', unsafe_allow_html=True)
+
+        # HRV trend from cycle history
+        if len(cycle_history) >= 3:
+            df_c = pd.DataFrame(cycle_history)
+            df_c["date"] = pd.to_datetime(df_c["date"])
+            df_c = df_c[df_c["hrv"].notna()].copy()
+            df_c = df_c[df_c["date"] >= pd.Timestamp(date.today() - timedelta(days=cutoff))]
+            if not df_c.empty:
+                st.markdown('<div class="card"><h4>HRV 趋势</h4>', unsafe_allow_html=True)
+                st.line_chart(df_c.set_index("date")["hrv"], color="#a855f7", height=160)
+                st.markdown('</div>', unsafe_allow_html=True)
+
+    # All runs table
+    with st.expander("跑步记录详情"):
+        cols = ["date","distance","pace","heartrate","cadence","stride_cm"]
+        cols_e = [c for c in cols if c in df.columns]
+        d = df[cols_e].rename(columns={"date":"日期","distance":"距离km","pace":"配速","heartrate":"心率","cadence":"步频","stride_cm":"步幅cm"})
+        d["日期"] = d["日期"].dt.strftime("%m-%d")
+        st.dataframe(d.sort_values("日期",ascending=False), hide_index=True, use_container_width=True)
+
+
+# ──────────────────────────────────────────────────────
+# TAB: 身体
+# ──────────────────────────────────────────────────────
+
+with tab_body:
+    col_b1, col_b2 = st.columns([1, 1])
+
+    with col_b1:
+        # Running dynamics (last run)
+        garmin_runs = garmin.get("garmin_runs", [])
+        if garmin_runs:
+            gr = garmin_runs[0]
+            def fmt(v, unit="", dec=1):
+                return f"{round(v,dec)}{unit}" if v is not None else "—"
+            def mc(v, lo, hi):
+                if v is None: return "#9ca3af"
+                return "#2d4a3e" if lo<=v<=hi else "#c0543a"
+            def mc_lt(v, t):
+                if v is None: return "#9ca3af"
+                return "#2d4a3e" if v<=t else "#c0543a"
+
+            te_cn = {"TEMPO":"节奏跑","BASE":"基础有氧","RECOVERY":"恢复","THRESHOLD":"乳酸阈","INTERVAL":"间歇","VO2MAX":"VO2Max"}
+            te_label_cn = te_cn.get(gr.get("te_label",""), gr.get("te_label",""))
+
+            st.markdown(f"""<div class="card">
+<h4>跑步动态 · {gr['date']} · {gr.get('name','')}</h4>
+<div class="dyn-grid">
+  <div class="dyn-item"><div class="dv" style="color:{mc(gr.get('cadence_spm'),170,185)}">{fmt(gr.get('cadence_spm'),'',0)}</div><div class="dl">步频 SPM</div><div class="dt">理想 170-180</div></div>
+  <div class="dyn-item"><div class="dv" style="color:#2d4a3e">{fmt(gr.get('stride_length_cm'),'cm',0)}</div><div class="dl">步幅</div></div>
+  <div class="dyn-item"><div class="dv" style="color:{mc_lt(gr.get('ground_contact_ms'),250)}">{fmt(gr.get('ground_contact_ms'),'ms',0)}</div><div class="dl">触地时间</div><div class="dt">&lt;250ms 为佳</div></div>
+  <div class="dyn-item"><div class="dv" style="color:{mc(gr.get('vertical_oscillation_cm'),6,9)}">{fmt(gr.get('vertical_oscillation_cm'),'cm')}</div><div class="dl">垂直振幅</div><div class="dt">理想 6-9cm</div></div>
+  <div class="dyn-item"><div class="dv" style="color:{mc_lt(gr.get('vertical_ratio_pct'),8.5)}">{fmt(gr.get('vertical_ratio_pct'),'%')}</div><div class="dl">垂直振幅比</div><div class="dt">&lt;8.5% 为佳</div></div>
+  <div class="dyn-item"><div class="dv" style="color:#6b7280">{fmt(gr.get('avg_power_w'),'W',0)}</div><div class="dl">平均功率</div></div>
 </div>
-""", unsafe_allow_html=True)
+<div style="border-top:1px solid #f0ebe0;margin:12px 0;padding-top:12px">
+<div class="dyn-grid">
+  <div class="dyn-item"><div class="dv" style="color:#b8952a">{fmt(gr.get('aerobic_te'),'',1)}</div><div class="dl">有氧效果 {te_label_cn}</div></div>
+  <div class="dyn-item"><div class="dv" style="color:#9ca3af">{fmt(gr.get('anaerobic_te'),'',1)}</div><div class="dl">无氧效果</div></div>
+  <div class="dyn-item"><div class="dv" style="color:#2d4a3e">{fmt(gr.get('training_load'),'',0)}</div><div class="dl">训练负荷</div></div>
+  <div class="dyn-item"><div class="dv" style="color:#7ecfaa">{fmt(gr.get('stamina_start_pct'),'%',0)} → {fmt(gr.get('stamina_end_pct'),'%',0)}</div><div class="dl">耐力消耗</div></div>
+  <div class="dyn-item"><div class="dv" style="color:{'#c0543a' if (gr.get('body_battery_change') or 0)<0 else '#2d4a3e'}">{fmt(gr.get('body_battery_change'),'',0)}</div><div class="dl">体能电量变化</div></div>
+  <div class="dyn-item"><div class="dv" style="color:#6b7280">{gr.get('steps','—')}</div><div class="dl">总步数</div></div>
+</div></div></div>""", unsafe_allow_html=True)
+
+        # VO2Max
+        if garmin.get("vo2max"):
+            vo2 = garmin["vo2max"]
+            vo2_lv = "精英" if vo2>=60 else "优秀" if vo2>=52 else "良好" if vo2>=44 else "一般"
+            # Progress bar 0-80
+            pct = min(100, round(vo2/80*100))
+            st.markdown(f"""<div class="card">
+<h4>VO2Max</h4>
+<div style="display:flex;align-items:center;gap:14px;margin-bottom:10px">
+  <div style="font-size:2.2rem;font-weight:800;color:#2d4a3e">{vo2}</div>
+  <div><div style="font-weight:600">{vo2_lv}</div><div style="font-size:0.78rem;color:#9ca3af">mL/kg/min</div></div>
+</div>
+<div class="prog-wrap">
+  <div class="prog-bar-bg"><div class="prog-bar-fill" style="width:{pct}%;background:#2d4a3e"></div></div>
+  <div style="display:flex;justify-content:space-between;font-size:0.7rem;color:#9ca3af;margin-top:3px"><span>0</span><span>一般 44</span><span>优秀 52</span><span>精英 60+</span></div>
+</div>
+</div>""", unsafe_allow_html=True)
+
+    with col_b2:
+        # Body composition
+        st.markdown('<div class="card"><h4>体成分 · 最新数据</h4>', unsafe_allow_html=True)
+        if body_history:
+            latest = body_history[-1]
+            metrics = [
+                ("体脂", latest.get("body_fat_pct"), "%", 0),
+                ("肌肉量", latest.get("muscle_mass_kg"), "kg", 1),
+                ("体重", latest.get("weight_kg"), "kg", 1),
+                ("内脏脂肪", latest.get("visceral_fat_cm2"), "cm²", 0),
+                ("相位角", latest.get("phase_angle"), "°", 1),
+            ]
+            grid = "".join([
+                f'<div class="dyn-item"><div class="dv" style="color:#2d4a3e">{round(v,d) if v else "—"}{u if v else ""}</div><div class="dl">{n}</div></div>'
+                for n,v,u,d in metrics if v
+            ])
+            st.markdown(f'<div class="dyn-grid">{grid}</div>', unsafe_allow_html=True)
+            st.markdown(f'<div style="font-size:0.75rem;color:#9ca3af;margin-top:8px">记录于 {latest.get("date","")}</div>', unsafe_allow_html=True)
+
+            # Trend charts if multiple records
+            if len(body_history) >= 2:
+                df_b = pd.DataFrame(body_history)
+                df_b["date"] = pd.to_datetime(df_b["date"])
+                if "body_fat_pct" in df_b and df_b["body_fat_pct"].notna().sum() >= 2:
+                    st.line_chart(df_b.set_index("date")[["body_fat_pct","muscle_mass_kg"]].dropna(how="all"), height=140)
+        else:
+            st.markdown('<div style="color:#9ca3af;font-size:0.85rem">运行 update_garmin.py 记录体成分数据（体脂、肌肉量、相位角等）</div>', unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
+
+        # Period tracker
+        st.markdown('<div class="card"><h4>月经周期规律</h4>', unsafe_allow_html=True)
+        if cycle_pred:
+            phase_c = PHASE_INFO.get(cycle_pred["cycle_phase"], {})
+            st.markdown(f"""
+<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+  <span style="font-size:1.8rem">{phase_c.get('emoji','')}</span>
+  <div>
+    <div style="font-size:1rem;font-weight:700;color:{phase_c.get('color','#333')}">{cycle_pred['cycle_phase']}</div>
+    <div style="font-size:0.78rem;color:#9ca3af">D{cycle_pred['cycle_day']} · 平均周期 {cycle_pred['avg_cycle']} 天</div>
+  </div>
+</div>""", unsafe_allow_html=True)
+            days_to_next = cycle_pred["days_to_next"]
+            next_p = cycle_pred["next_period"]
+            if days_to_next < 0:
+                st.markdown(f'<div style="font-size:0.82rem;color:#c0543a">⚠️ 预计已逾期 {-days_to_next} 天</div>', unsafe_allow_html=True)
+            elif days_to_next <= 3:
+                st.markdown(f'<div style="font-size:0.82rem;color:#c0543a">🔴 预计 {days_to_next} 天后来经（{next_p}）</div>', unsafe_allow_html=True)
+            else:
+                st.markdown(f'<div style="font-size:0.82rem;color:#6b7280">📅 下次预计：{next_p}（{days_to_next} 天后）</div>', unsafe_allow_html=True)
+
+        # Period start history
+        period_list = [e for e in cycle_history if e.get("cycle_day")==1 or e.get("is_period_start")]
+        if period_list:
+            st.markdown('<div style="margin-top:12px">', unsafe_allow_html=True)
+            for p in sorted(period_list, key=lambda x: x["date"], reverse=True)[:4]:
+                st.markdown(f'<div style="font-size:0.82rem;color:#6b7280;padding:4px 0;border-bottom:1px solid #f0ebe0">{p["date"]}</div>', unsafe_allow_html=True)
+            st.markdown('</div>', unsafe_allow_html=True)
+
+        st.markdown('<div style="font-size:0.75rem;color:#9ca3af;margin-top:10px">经期开始时运行 update_garmin.py 标记即可</div>', unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
+
+        # Strength
+        if garmin.get("strength"):
+            st.markdown('<div class="card"><h4>近期力量训练</h4>', unsafe_allow_html=True)
+            for s in garmin["strength"][:4]:
+                st.markdown(f'<div style="padding:6px 0;border-bottom:1px solid #f0ebe0;font-size:0.85rem">🏋️ <b>{s["date"]}</b> {s["name"]} · {s["duration_min"]}min</div>', unsafe_allow_html=True)
+            st.markdown('</div>', unsafe_allow_html=True)

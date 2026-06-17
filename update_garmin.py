@@ -200,9 +200,51 @@ with open(cycle_path, "w", encoding="utf-8") as f:
     json.dump(cycle_history, f, ensure_ascii=False, indent=2)
 print(f"✅ 经期日志已记录：{entry['cycle_phase'] or '暂无记录'}")
 
+# ============================================================
+# 体成分录入（测过才需要填，平时直接回车跳过）
+# ============================================================
+print("\n=== 体成分数据（刚做过 InBody / 体脂测量才需要填，直接回车全部跳过）===")
+weight_input   = input("体重 (kg, 回车跳过): ").strip()
+fat_input      = input("体脂 (%, 回车跳过): ").strip()
+muscle_input   = input("肌肉量 (kg, 回车跳过): ").strip()
+visceral_input = input("内脏脂肪 (cm², 回车跳过): ").strip()
+phase_input    = input("相位角 (°, 回车跳过): ").strip()
+
+def try_float(s):
+    try: return float(s) if s else None
+    except: return None
+
+body_entry_data = {
+    "weight_kg":          try_float(weight_input),
+    "body_fat_pct":       try_float(fat_input),
+    "muscle_mass_kg":     try_float(muscle_input),
+    "visceral_fat_cm2":   try_float(visceral_input),
+    "phase_angle":        try_float(phase_input),
+}
+
+if any(v is not None for v in body_entry_data.values()):
+    body_path = os.path.join(REPO_DIR, "body_data.json")
+    if os.path.exists(body_path):
+        with open(body_path, encoding="utf-8") as f:
+            body_history = json.load(f)
+    else:
+        body_history = []
+    body_history = [e for e in body_history if e["date"] != today]
+    body_entry_data["date"] = today
+    body_history.append(body_entry_data)
+    body_history.sort(key=lambda x: x["date"])
+    with open(body_path, "w", encoding="utf-8") as f:
+        json.dump(body_history, f, ensure_ascii=False, indent=2)
+    print(f"✅ 体成分已记录：体脂 {fat_input or '—'}%，肌肉量 {muscle_input or '—'}kg")
+else:
+    print("ℹ️ 体成分：跳过")
+
 # 推送到 GitHub
 print("\n正在推送到 GitHub...")
-subprocess.run(["git", "-C", REPO_DIR, "add", "garmin_data.json", "cycle_data.json"], check=True)
+files_to_add = ["garmin_data.json", "cycle_data.json"]
+if any(v is not None for v in body_entry_data.values()):
+    files_to_add.append("body_data.json")
+subprocess.run(["git", "-C", REPO_DIR, "add"] + files_to_add, check=True)
 result = subprocess.run(["git", "-C", REPO_DIR, "commit", "-m", f"Update data {today}"], capture_output=True, text=True)
 if result.returncode == 0:
     subprocess.run(["git", "-C", REPO_DIR, "push"], check=True)
