@@ -17,6 +17,10 @@ def ask(prompt, default=""):
 GARMIN_USER_ID = "119995800"
 REPO_DIR = os.path.expanduser("~/run-dashboard")
 
+# 先 pull，避免后面写文件后无法 rebase
+print("正在同步 GitHub 最新数据...")
+subprocess.run(["git", "-C", REPO_DIR, "pull", "origin", "main", "--rebase"], check=True)
+
 print("正在连接 Garmin...")
 garth.resume(os.path.expanduser("~/.garth"))
 
@@ -262,8 +266,6 @@ else:
 
 # 推送到 GitHub
 print("\n正在推送到 GitHub...")
-# 先拉取，避免 App 写入 cycle_data.json 后冲突
-subprocess.run(["git", "-C", REPO_DIR, "pull", "origin", "main", "--rebase"], check=True)
 files_to_add = ["garmin_data.json", "cycle_data.json"]
 if any(v is not None for v in body_entry_data.values()):
     files_to_add.append("body_data.json")
