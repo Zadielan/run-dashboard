@@ -17,6 +17,8 @@ GARMIN_OAUTH1        = st.secrets["GARMIN_OAUTH1"]
 GARMIN_OAUTH2        = st.secrets["GARMIN_OAUTH2"]
 GARMIN_USER_ID       = "119995800"
 BERLIN_DATE          = date(2026, 9, 27)
+GITHUB_TOKEN     = st.secrets.get("GITHUB_TOKEN", "")
+GITHUB_REPO      = "Zadielan/run-dashboard"
 GARMIN_DATA_URL  = "https://raw.githubusercontent.com/Zadielan/run-dashboard/main/garmin_data.json"
 CYCLE_DATA_URL   = "https://raw.githubusercontent.com/Zadielan/run-dashboard/main/cycle_data.json"
 BODY_DATA_URL    = "https://raw.githubusercontent.com/Zadielan/run-dashboard/main/body_data.json"
@@ -177,6 +179,26 @@ def fetch_body_data():
     except:
         data = []
     st.session_state.body_data = data
+
+
+def push_json_to_github(filename, data, commit_msg):
+    """Push JSON file to GitHub via API. Returns (success, message)."""
+    import base64
+    if not GITHUB_TOKEN:
+        return False, "未配置 GITHUB_TOKEN"
+    url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{filename}"
+    headers = {"Authorization": f"token {GITHUB_TOKEN}", "Accept": "application/vnd.github.v3+json"}
+    # Get current SHA (needed for updates)
+    r = http_req.get(url, headers=headers, timeout=10)
+    sha = r.json().get("sha") if r.status_code == 200 else None
+    content = base64.b64encode(json.dumps(data, ensure_ascii=False, indent=2).encode()).decode()
+    payload = {"message": commit_msg, "content": content}
+    if sha:
+        payload["sha"] = sha
+    resp = http_req.put(url, headers=headers, json=payload, timeout=15)
+    if resp.status_code in (200, 201):
+        return True, "已保存"
+    return False, f"保存失败: {resp.status_code}"
     return data
 
 
@@ -671,36 +693,78 @@ with tab_body:
             st.markdown('<div style="color:#9ca3af;font-size:0.85rem">运行 update_garmin.py 记录体成分数据（体脂、肌肉量、相位角等）</div>', unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
-        # Period tracker
+        # Period tracker — interactive
         st.markdown('<div class="card"><h4>月经周期规律</h4>', unsafe_allow_html=True)
+
+        # Current prediction display
         if cycle_pred:
             phase_c = PHASE_INFO.get(cycle_pred["cycle_phase"], {})
+            days_to_next = cycle_pred["days_to_next"]
+            next_p = cycle_pred["next_period"]
+            if days_to_next < 0:
+                next_str = f'<span style="color:#c0543a">⚠️ 预计已逾期 {-days_to_next} 天</span>'
+            elif days_to_next <= 3:
+                next_str = f'<span style="color:#c0543a">🔴 {days_to_next} 天后来经（{next_p}）</span>'
+            else:
+                next_str = f'<span style="color:#6b7280">📅 下次预计 {next_p}（{days_to_next} 天后）</span>'
             st.markdown(f"""
-<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
-  <span style="font-size:1.8rem">{phase_c.get('emoji','')}</span>
+<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+  <span style="font-size:1.6rem">{phase_c.get('emoji','')}</span>
   <div>
     <div style="font-size:1rem;font-weight:700;color:{phase_c.get('color','#333')}">{cycle_pred['cycle_phase']}</div>
     <div style="font-size:0.78rem;color:#9ca3af">D{cycle_pred['cycle_day']} · 平均周期 {cycle_pred['avg_cycle']} 天</div>
   </div>
-</div>""", unsafe_allow_html=True)
-            days_to_next = cycle_pred["days_to_next"]
-            next_p = cycle_pred["next_period"]
-            if days_to_next < 0:
-                st.markdown(f'<div style="font-size:0.82rem;color:#c0543a">⚠️ 预计已逾期 {-days_to_next} 天</div>', unsafe_allow_html=True)
-            elif days_to_next <= 3:
-                st.markdown(f'<div style="font-size:0.82rem;color:#c0543a">🔴 预计 {days_to_next} 天后来经（{next_p}）</div>', unsafe_allow_html=True)
-            else:
-                st.markdown(f'<div style="font-size:0.82rem;color:#6b7280">📅 下次预计：{next_p}（{days_to_next} 天后）</div>', unsafe_allow_html=True)
+</div>
+<div style="font-size:0.82rem;margin-bottom:12px">{next_str}</div>
+""", unsafe_allow_html=True)
 
-        # Period start history
-        period_list = [e for e in cycle_history if e.get("cycle_day")==1 or e.get("is_period_start")]
+        # Input form
+        period_list = sorted(
+            [e for e in cycle_history if e.get("cycle_day")==1 or e.get("is_period_start")],
+            key=lambda x: x["date"], reverse=True
+        )
+        default_date = date.fromisoformat(period_list[0]["date"]) if period_list else date.today()
+
+        with st.form("period_form"):
+            st.markdown('<div style="font-size:0.8rem;color:#6b7280;margin-bottom:6px">记录经期开始日</div>', unsafe_allow_html=True)
+            col_pd, col_pb = st.columns([2, 1])
+            with col_pd:
+                new_period_date = st.date_input(
+                    "月经开始日", value=default_date,
+                    max_value=date.today(), label_visibility="collapsed"
+                )
+            with col_pb:
+                save_period = st.form_submit_button("+ 记录这次月经", use_container_width=True)
+
+            if save_period:
+                date_str = str(new_period_date)
+                # Update cycle_history in memory
+                updated = [e for e in cycle_history if e.get("date") != date_str]
+                updated.append({"date": date_str, "cycle_day": 1, "cycle_phase": "月经期", "is_period_start": True})
+                updated.sort(key=lambda x: x["date"])
+                ok, msg = push_json_to_github("cycle_data.json", updated, f"Record period start {date_str}")
+                if ok:
+                    st.session_state.cycle_data = updated
+                    st.success(f"✅ 已记录 {date_str} 为经期第一天")
+                    st.rerun()
+                else:
+                    st.error(msg + "（请检查 GITHUB_TOKEN）")
+
+        # History list
         if period_list:
-            st.markdown('<div style="margin-top:12px">', unsafe_allow_html=True)
-            for p in sorted(period_list, key=lambda x: x["date"], reverse=True)[:4]:
-                st.markdown(f'<div style="font-size:0.82rem;color:#6b7280;padding:4px 0;border-bottom:1px solid #f0ebe0">{p["date"]}</div>', unsafe_allow_html=True)
+            st.markdown('<div style="margin-top:8px">', unsafe_allow_html=True)
+            for i, p in enumerate(period_list[:5]):
+                d_str = p["date"]
+                # Calculate cycle length to previous
+                if i < len(period_list)-1:
+                    prev = date.fromisoformat(period_list[i+1]["date"])
+                    length = (date.fromisoformat(d_str) - prev).days
+                    length_str = f'周期 {length} 天'
+                else:
+                    length_str = "最近一次"
+                st.markdown(f'<div style="display:flex;justify-content:space-between;font-size:0.82rem;color:#6b7280;padding:5px 0;border-bottom:1px solid #f0ebe0"><span>{d_str}</span><span style="color:#9ca3af">{length_str}</span></div>', unsafe_allow_html=True)
             st.markdown('</div>', unsafe_allow_html=True)
 
-        st.markdown('<div style="font-size:0.75rem;color:#9ca3af;margin-top:10px">经期开始时运行 update_garmin.py 标记即可</div>', unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
         # Strength
