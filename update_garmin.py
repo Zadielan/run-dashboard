@@ -3,8 +3,16 @@
 本地运行此脚本，抓取 Garmin 数据 + 记录经期日志，并推送到 GitHub。
 每天运行一次即可。
 """
-import garth, json, subprocess, os
+import garth, json, subprocess, os, sys
 from datetime import date, timedelta
+
+# 自动模式：launchd / cron 运行时 stdin 不是 tty，跳过所有交互输入
+INTERACTIVE = sys.stdin.isatty()
+
+def ask(prompt, default=""):
+    if not INTERACTIVE:
+        return default
+    return input(prompt).strip()
 
 GARMIN_USER_ID = "119995800"
 REPO_DIR = os.path.expanduser("~/run-dashboard")
@@ -187,8 +195,8 @@ else:
     print("⚠️ 还没有经期记录，请记录今天是否为经期第一天")
 
 # 只问是否经期开始（其他自动推算）
-period_start_input = input("今天是否是经期第一天？(y/n，回车跳过): ").strip().lower()
-nutrition_input = input("今日饮食备注（回车跳过）: ").strip()
+period_start_input = ask("今天是否是经期第一天？(y/n，回车跳过): ").lower()
+nutrition_input = ask("今日饮食备注（回车跳过）: ")
 
 is_period_start = period_start_input == "y"
 if is_period_start:
@@ -217,11 +225,11 @@ print(f"✅ 经期日志已记录：{entry['cycle_phase'] or '暂无记录'}")
 # 体成分录入（测过才需要填，平时直接回车跳过）
 # ============================================================
 print("\n=== 体成分数据（刚做过 InBody / 体脂测量才需要填，直接回车全部跳过）===")
-weight_input   = input("体重 (kg, 回车跳过): ").strip()
-fat_input      = input("体脂 (%, 回车跳过): ").strip()
-muscle_input   = input("肌肉量 (kg, 回车跳过): ").strip()
-visceral_input = input("内脏脂肪 (cm², 回车跳过): ").strip()
-phase_input    = input("相位角 (°, 回车跳过): ").strip()
+weight_input   = ask("体重 (kg, 回车跳过): ")
+fat_input      = ask("体脂 (%, 回车跳过): ")
+muscle_input   = ask("肌肉量 (kg, 回车跳过): ")
+visceral_input = ask("内脏脂肪 (cm², 回车跳过): ")
+phase_input    = ask("相位角 (°, 回车跳过): ")
 
 def try_float(s):
     try: return float(s) if s else None
@@ -254,6 +262,8 @@ else:
 
 # 推送到 GitHub
 print("\n正在推送到 GitHub...")
+# 先拉取，避免 App 写入 cycle_data.json 后冲突
+subprocess.run(["git", "-C", REPO_DIR, "pull", "origin", "main", "--rebase"], check=True)
 files_to_add = ["garmin_data.json", "cycle_data.json"]
 if any(v is not None for v in body_entry_data.values()):
     files_to_add.append("body_data.json")
