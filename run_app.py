@@ -215,11 +215,19 @@ PHASE_INFO = {
 
 def predict_cycle(history):
     today_date = date.today()
-    period_starts = sorted([e["date"] for e in history if e.get("cycle_day")==1 or e.get("is_period_start")])
-    if not period_starts: return None
-    last_start = date.fromisoformat(period_starts[-1])
+    period_entries = sorted(
+        [e for e in history if e.get("cycle_day")==1 or e.get("is_period_start")],
+        key=lambda x: x["date"]
+    )
+    if not period_entries: return None
+    period_starts = [e["date"] for e in period_entries]
+    last_entry = period_entries[-1]
+    last_start = date.fromisoformat(last_entry["date"])
     days_since = (today_date - last_start).days + 1
-    if len(period_starts) >= 2:
+    # Use stored cycle_length if available, else calculate from intervals
+    if last_entry.get("cycle_length"):
+        avg_cycle = last_entry["cycle_length"]
+    elif len(period_starts) >= 2:
         intervals = [(date.fromisoformat(period_starts[i+1]) - date.fromisoformat(period_starts[i])).days
                      for i in range(len(period_starts)-1)]
         avg_cycle = round(sum(intervals)/len(intervals))
@@ -749,6 +757,11 @@ with tab_body:
         # Period tracker — interactive
         st.markdown('<div class="card"><h4>月经周期规律</h4>', unsafe_allow_html=True)
 
+        period_list = sorted(
+            [e for e in cycle_history if e.get("cycle_day")==1 or e.get("is_period_start")],
+            key=lambda x: x["date"], reverse=True
+        )
+
         # Current prediction display
         if cycle_pred:
             phase_c = PHASE_INFO.get(cycle_pred["cycle_phase"], {})
@@ -761,62 +774,79 @@ with tab_body:
             else:
                 next_str = f'<span style="color:#6b7280">📅 下次预计 {next_p}（{days_to_next} 天后）</span>'
             st.markdown(f"""
-<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
   <span style="font-size:1.6rem">{phase_c.get('emoji','')}</span>
   <div>
     <div style="font-size:1rem;font-weight:700;color:{phase_c.get('color','#333')}">{cycle_pred['cycle_phase']}</div>
-    <div style="font-size:0.78rem;color:#9ca3af">D{cycle_pred['cycle_day']} · 平均周期 {cycle_pred['avg_cycle']} 天</div>
+    <div style="font-size:0.78rem;color:#9ca3af">D{cycle_pred['cycle_day']} · 周期 {cycle_pred['avg_cycle']} 天</div>
   </div>
 </div>
-<div style="font-size:0.82rem;margin-bottom:12px">{next_str}</div>
+<div style="font-size:0.82rem;margin-bottom:10px">{next_str}</div>
 """, unsafe_allow_html=True)
 
-        # Input form
-        period_list = sorted(
-            [e for e in cycle_history if e.get("cycle_day")==1 or e.get("is_period_start")],
-            key=lambda x: x["date"], reverse=True
-        )
+        # Add new period record
         default_date = date.fromisoformat(period_list[0]["date"]) if period_list else date.today()
-
         with st.form("period_form"):
-            st.markdown('<div style="font-size:0.8rem;color:#6b7280;margin-bottom:6px">记录经期开始日</div>', unsafe_allow_html=True)
-            col_pd, col_pb = st.columns([2, 1])
+            st.markdown('<div style="font-size:0.78rem;color:#9ca3af;margin-bottom:4px">记录经期开始日</div>', unsafe_allow_html=True)
+            col_pd, col_pl, col_pb = st.columns([2, 1, 1])
             with col_pd:
                 new_period_date = st.date_input(
-                    "月经开始日", value=default_date,
+                    "开始日", value=default_date,
                     max_value=date.today(), label_visibility="collapsed"
                 )
+            with col_pl:
+                manual_cycle_len = st.number_input(
+                    "周期天数", min_value=20, max_value=45, value=28,
+                    step=1, label_visibility="collapsed",
+                    help="你的周期长度（天）"
+                )
             with col_pb:
-                save_period = st.form_submit_button("+ 记录这次月经", use_container_width=True)
+                save_period = st.form_submit_button("+ 记录", use_container_width=True)
 
             if save_period:
                 date_str = str(new_period_date)
-                # Update cycle_history in memory
                 updated = [e for e in cycle_history if e.get("date") != date_str]
-                updated.append({"date": date_str, "cycle_day": 1, "cycle_phase": "月经期", "is_period_start": True})
+                updated.append({
+                    "date": date_str, "cycle_day": 1, "cycle_phase": "月经期",
+                    "is_period_start": True, "cycle_length": int(manual_cycle_len)
+                })
                 updated.sort(key=lambda x: x["date"])
                 ok, msg = push_json_to_github("cycle_data.json", updated, f"Record period start {date_str}")
                 if ok:
                     st.session_state.cycle_data = updated
-                    st.success(f"✅ 已记录 {date_str} 为经期第一天")
+                    st.success(f"✅ 已记录 {date_str}，周期 {manual_cycle_len} 天")
                     st.rerun()
                 else:
                     st.error(msg + "（请检查 GITHUB_TOKEN）")
 
-        # History list
+        # History list with delete buttons
         if period_list:
-            st.markdown('<div style="margin-top:8px">', unsafe_allow_html=True)
-            for i, p in enumerate(period_list[:5]):
+            st.markdown('<div style="margin-top:10px;font-size:0.75rem;color:#9ca3af;margin-bottom:4px">历史记录</div>', unsafe_allow_html=True)
+            for i, p in enumerate(period_list[:6]):
                 d_str = p["date"]
-                # Calculate cycle length to previous
-                if i < len(period_list)-1:
+                stored_len = p.get("cycle_length")
+                if stored_len:
+                    length_str = f"周期 {stored_len} 天"
+                elif i < len(period_list) - 1:
                     prev = date.fromisoformat(period_list[i+1]["date"])
-                    length = (date.fromisoformat(d_str) - prev).days
-                    length_str = f'周期 {length} 天'
+                    length_str = f"周期 {(date.fromisoformat(d_str) - prev).days} 天"
                 else:
                     length_str = "最近一次"
-                st.markdown(f'<div style="display:flex;justify-content:space-between;font-size:0.82rem;color:#6b7280;padding:5px 0;border-bottom:1px solid #f0ebe0"><span>{d_str}</span><span style="color:#9ca3af">{length_str}</span></div>', unsafe_allow_html=True)
-            st.markdown('</div>', unsafe_allow_html=True)
+
+                col_dl, col_dt, col_dd = st.columns([2, 1, 0.4])
+                with col_dl:
+                    st.markdown(f'<div style="font-size:0.85rem;padding:6px 0;color:#1a1a1a">{d_str}</div>', unsafe_allow_html=True)
+                with col_dt:
+                    st.markdown(f'<div style="font-size:0.8rem;padding:6px 0;color:#9ca3af">{length_str}</div>', unsafe_allow_html=True)
+                with col_dd:
+                    if st.button("✕", key=f"del_period_{d_str}", help=f"删除 {d_str}"):
+                        updated = [e for e in cycle_history if e.get("date") != d_str or not (e.get("is_period_start") or e.get("cycle_day")==1)]
+                        ok, msg = push_json_to_github("cycle_data.json", updated, f"Delete period {d_str}")
+                        if ok:
+                            st.session_state.cycle_data = updated
+                            st.rerun()
+                        else:
+                            st.error(msg)
 
         st.markdown('</div>', unsafe_allow_html=True)
 
