@@ -19,5 +19,14 @@
     "nutrition_notes": null,
     "hrv": 58,
     "sleep_hours": 6.3
+  },
+  {
+    "date": "2026-06-17",
+    "cycle_day": 4,
+    "cycle_phase": "月经期",
+    "is_period_start": false,
+    "nutrition_notes": "三文鱼，mash patato,胡萝卜，青豆",
+    "hrv": 60,
+    "sleep_hours": 6.7
   }
 ]
