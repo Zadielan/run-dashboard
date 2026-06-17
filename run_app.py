@@ -725,6 +725,52 @@ with tab_body:
 </div>
 </div>""", unsafe_allow_html=True)
 
+        # Endurance card
+        stamina_runs = [g for g in garmin_runs if g.get("stamina_start_pct") is not None]
+        if stamina_runs:
+            latest_s = stamina_runs[0]
+            s_start = latest_s.get("stamina_start_pct", 0)
+            s_end   = latest_s.get("stamina_end_pct", 0)
+            s_drop  = round(s_start - s_end, 1) if s_start and s_end else None
+            # Color: less drop = greener
+            drop_color = "#2d4a3e" if s_drop and s_drop < 20 else "#b8952a" if s_drop and s_drop < 35 else "#c0543a"
+
+            # Build bar rows for recent runs
+            bars_html = ""
+            for g in stamina_runs[:6]:
+                ss = g.get("stamina_start_pct") or 0
+                se = g.get("stamina_end_pct") or 0
+                d  = g.get("date", "")[-5:]
+                dist = g.get("distance_km") or 0
+                drop_pct = round(ss - se, 0)
+                bar_w = round(se / ss * 100) if ss else 0
+                bars_html += f"""
+<div style="margin-bottom:8px">
+  <div style="display:flex;justify-content:space-between;font-size:0.72rem;color:#9ca3af;margin-bottom:3px">
+    <span>{d} · {dist}km</span>
+    <span>{round(ss,0)}% → {round(se,0)}% <span style="color:#c0543a">(-{round(drop_pct,0)}%)</span></span>
+  </div>
+  <div style="background:#f0ebe0;border-radius:4px;height:6px;overflow:hidden">
+    <div style="width:{bar_w}%;background:#7ecfaa;height:6px;border-radius:4px"></div>
+  </div>
+</div>"""
+
+            st.markdown(f"""<div class="card">
+<h4>耐力 Endurance</h4>
+<div style="display:flex;align-items:center;gap:16px;margin-bottom:14px">
+  <div>
+    <div style="font-size:1.8rem;font-weight:800;color:{drop_color}">-{s_drop}%</div>
+    <div style="font-size:0.75rem;color:#9ca3af">最近一跑耐力消耗</div>
+  </div>
+  <div style="flex:1">
+    <div style="font-size:0.82rem;color:#1a1a1a">{round(s_start,0)}% <span style="color:#9ca3af">→</span> {round(s_end,0)}%</div>
+    <div style="font-size:0.72rem;color:#9ca3af;margin-top:2px">{'✅ 耐力储备充足' if s_drop and s_drop < 20 else '⚠️ 耐力消耗较大，注意配速控制' if s_drop and s_drop < 35 else '❗ 耐力严重透支'}</div>
+  </div>
+</div>
+<div style="font-size:0.75rem;color:#9ca3af;margin-bottom:6px">近期跑步耐力趋势</div>
+{bars_html}
+</div>""", unsafe_allow_html=True)
+
     with col_b2:
         # Body composition
         st.markdown('<div class="card"><h4>体成分 · 最新数据</h4>', unsafe_allow_html=True)
