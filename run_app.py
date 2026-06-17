@@ -554,44 +554,97 @@ with tab_trend:
     df = pd.DataFrame(runs)
     df["date"] = pd.to_datetime(df["date"])
 
+    # Garmin runs DataFrame (for vertical ratio etc.)
+    garmin_runs = garmin.get("garmin_runs", [])
+    df_gr = pd.DataFrame(garmin_runs) if garmin_runs else pd.DataFrame()
+    if not df_gr.empty:
+        df_gr["date"] = pd.to_datetime(df_gr["date"])
+
     # Time range selector
     range_days = st.radio("时间范围", ["14天","30天","全部"], horizontal=True, index=1)
     cutoff = {"14天": 14, "30天": 30, "全部": 9999}[range_days]
-    df_f = df[df["date"] >= pd.Timestamp(date.today() - timedelta(days=cutoff))]
+    cutoff_dt = pd.Timestamp(date.today() - timedelta(days=cutoff))
+    df_f = df[df["date"] >= cutoff_dt]
+    df_gr_f = df_gr[df_gr["date"] >= cutoff_dt] if not df_gr.empty else df_gr
+
+    def trend_card(title, chart_fn, note=None):
+        st.markdown(f'<div class="card"><h4>{title}</h4>', unsafe_allow_html=True)
+        chart_fn()
+        if note:
+            st.markdown(f'<div style="font-size:0.8rem;margin-top:4px;color:#6b7280">{note}</div>', unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
 
     c1, c2 = st.columns(2)
-    with c1:
-        st.markdown('<div class="card"><h4>配速趋势 (min/km)</h4>', unsafe_allow_html=True)
-        if not df_f.empty:
-            st.line_chart(df_f.set_index("date")["pace"], color="#2d4a3e", height=160)
-        st.markdown('</div>', unsafe_allow_html=True)
 
-        st.markdown('<div class="card"><h4>步频趋势 (SPM)</h4>', unsafe_allow_html=True)
-        df_cad = df_f[df_f["cadence"].notna()]
-        if not df_cad.empty:
-            st.line_chart(df_cad.set_index("date")["cadence"], color="#b8952a", height=160)
-            avg_cad = round(df_cad["cadence"].mean())
-            cad_ok = avg_cad >= 170
-            tip = f"{'✅' if cad_ok else '⚠️'} 均值 {avg_cad} SPM {'（理想）' if cad_ok else '（建议提至170+）'}"
-            st.markdown(f'<div style="font-size:0.82rem;color:{"#2d4a3e" if cad_ok else "#c0543a"}">{tip}</div>', unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)
+    with c1:
+        # 配速
+        def _pace():
+            if not df_f.empty: st.line_chart(df_f.set_index("date")["pace"], color="#2d4a3e", height=155)
+        trend_card("配速趋势 (min/km)", _pace)
+
+        # 步频
+        def _cad():
+            df_cad = df_f[df_f["cadence"].notna()]
+            if not df_cad.empty:
+                st.line_chart(df_cad.set_index("date")["cadence"], color="#b8952a", height=155)
+        avg_cad = round(df_f["cadence"].dropna().mean()) if not df_f.empty and df_f["cadence"].notna().any() else None
+        cad_note = f"{'✅' if avg_cad and avg_cad>=170 else '⚠️'} 均值 {avg_cad} SPM" if avg_cad else None
+        trend_card("步频趋势 (SPM)", _cad, cad_note)
+
+        # 心率
+        def _hr():
+            df_hr = df_f[df_f["heartrate"].notna()].copy()
+            if not df_hr.empty:
+                plot_cols = ["heartrate"]
+                if "max_heartrate" in df_hr.columns and df_hr["max_heartrate"].notna().any():
+                    plot_cols.append("max_heartrate")
+                st.line_chart(df_hr.set_index("date")[plot_cols], color=["#c0543a","#f4a49a"][:len(plot_cols)], height=155)
+        avg_hr = round(df_f["heartrate"].dropna().mean()) if not df_f.empty and df_f["heartrate"].notna().any() else None
+        trend_card("心率趋势 (bpm)", _hr, f"均值 {avg_hr} bpm" if avg_hr else None)
+
+        # 步幅（优先 Garmin，否则 Strava 估算）
+        def _stride():
+            if not df_gr_f.empty and "stride_length_cm" in df_gr_f.columns and df_gr_f["stride_length_cm"].notna().any():
+                st.line_chart(df_gr_f.set_index("date")["stride_length_cm"].dropna(), color="#7ecfaa", height=155)
+            elif not df_f.empty and "stride_cm" in df_f.columns and df_f["stride_cm"].notna().any():
+                st.line_chart(df_f[df_f["stride_cm"].notna()].set_index("date")["stride_cm"], color="#7ecfaa", height=155)
+        trend_card("步幅趋势 (cm)", _stride)
 
     with c2:
-        st.markdown('<div class="card"><h4>跑量 (km)</h4>', unsafe_allow_html=True)
-        if not df_f.empty:
-            st.bar_chart(df_f.set_index("date")["distance"], color="#c8a84b", height=160)
-        st.markdown('</div>', unsafe_allow_html=True)
+        # 跑量
+        def _dist():
+            if not df_f.empty: st.bar_chart(df_f.set_index("date")["distance"], color="#c8a84b", height=155)
+        trend_card("跑量 (km)", _dist)
 
-        # HRV trend from cycle history
-        if len(cycle_history) >= 3:
-            df_c = pd.DataFrame(cycle_history)
-            df_c["date"] = pd.to_datetime(df_c["date"])
-            df_c = df_c[df_c["hrv"].notna()].copy()
-            df_c = df_c[df_c["date"] >= pd.Timestamp(date.today() - timedelta(days=cutoff))]
-            if not df_c.empty:
-                st.markdown('<div class="card"><h4>HRV 趋势</h4>', unsafe_allow_html=True)
-                st.line_chart(df_c.set_index("date")["hrv"], color="#a855f7", height=160)
-                st.markdown('</div>', unsafe_allow_html=True)
+        # HRV
+        df_cyc = pd.DataFrame(cycle_history) if cycle_history else pd.DataFrame()
+        if not df_cyc.empty and "hrv" in df_cyc.columns:
+            df_cyc["date"] = pd.to_datetime(df_cyc["date"])
+            df_cyc_f = df_cyc[df_cyc["hrv"].notna() & (df_cyc["date"] >= cutoff_dt)]
+            def _hrv():
+                if not df_cyc_f.empty:
+                    st.line_chart(df_cyc_f.set_index("date")["hrv"], color="#a855f7", height=155)
+            trend_card("HRV 趋势", _hrv)
+
+        # 睡眠
+        if not df_cyc.empty and "sleep_hours" in df_cyc.columns:
+            df_sleep_f = df_cyc[df_cyc["sleep_hours"].notna() & (df_cyc["date"] >= cutoff_dt)].copy()
+            def _sleep():
+                if not df_sleep_f.empty:
+                    st.bar_chart(df_sleep_f.set_index("date")["sleep_hours"], color="#3b82f6", height=155)
+            avg_sl = round(df_sleep_f["sleep_hours"].mean(), 1) if not df_sleep_f.empty else None
+            sl_note = f"均值 {avg_sl}h {'✅' if avg_sl and avg_sl>=7 else '⚠️ 睡眠不足'}" if avg_sl else None
+            trend_card("睡眠时长 (h)", _sleep, sl_note)
+
+        # 垂直振幅比
+        def _vr():
+            if not df_gr_f.empty and "vertical_ratio_pct" in df_gr_f.columns and df_gr_f["vertical_ratio_pct"].notna().any():
+                st.line_chart(df_gr_f.set_index("date")["vertical_ratio_pct"].dropna(), color="#f97316", height=155)
+            else:
+                st.markdown('<div style="color:#9ca3af;font-size:0.85rem;padding:20px 0">运行 update_garmin.py 后显示</div>', unsafe_allow_html=True)
+        avg_vr = round(df_gr_f["vertical_ratio_pct"].dropna().mean(), 1) if not df_gr_f.empty and "vertical_ratio_pct" in df_gr_f.columns and df_gr_f["vertical_ratio_pct"].notna().any() else None
+        vr_note = f"均值 {avg_vr}% {'✅' if avg_vr and avg_vr<=8.5 else '⚠️ 偏高，减少上下弹跳'}" if avg_vr else None
+        trend_card("垂直振幅比 (%)", _vr, vr_note)
 
     # All runs table
     with st.expander("跑步记录详情"):
