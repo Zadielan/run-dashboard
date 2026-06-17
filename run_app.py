@@ -722,15 +722,25 @@ with tab_body:
 </div>""", unsafe_allow_html=True)
 
     with g5:
-        es_score = es_d.get("score") if es_d else None
-        es_level = es_d.get("level","") if es_d else ""
-        es_trend = es_d.get("trend","") if es_d else ""
-        level_cn = {"BASIC":"入门","INTERMEDIATE":"中级","TRAINED":"训练级","HIGHLY_TRAINED":"高训练级","ELITE":"精英"}.get((es_level or "").upper(), es_level or "—")
-        trend_arrow = "↑" if "UP" in (es_trend or "").upper() else "↓" if "DOWN" in (es_trend or "").upper() else "→"
-        st.markdown(f"""<div class="card" style="text-align:center;padding:16px 12px">
-<div style="font-size:0.7rem;color:#9ca3af;margin-bottom:8px">🏅 耐力评分</div>
-<div style="font-size:1.8rem;font-weight:800;color:#2d4a3e">{es_score or '—'}</div>
-<div style="font-size:0.72rem;color:#9ca3af">{level_cn} {trend_arrow if es_score else ''}</div>
+        # 用最近一跑的耐力消耗替代 Endurance Score
+        gr_list = garmin.get("garmin_runs", [])
+        last_stamina = next((g for g in gr_list if g.get("stamina_end_pct") is not None), None)
+        if last_stamina:
+            s_end = round(last_stamina["stamina_end_pct"])
+            s_start = round(last_stamina.get("stamina_start_pct", 100))
+            drop = s_start - s_end
+            s_color = "#2d4a3e" if s_end >= 60 else "#b8952a" if s_end >= 35 else "#c0543a"
+            s_label = "储备充足" if s_end >= 60 else "适度消耗" if s_end >= 35 else "透支"
+            st.markdown(f"""<div class="card" style="text-align:center;padding:16px 12px">
+<div style="font-size:0.7rem;color:#9ca3af;margin-bottom:8px">🏅 耐力剩余</div>
+<div style="font-size:1.8rem;font-weight:800;color:{s_color}">{s_end}%</div>
+<div style="font-size:0.72rem;color:#9ca3af">{s_label} (-{drop}%)</div>
+</div>""", unsafe_allow_html=True)
+        else:
+            st.markdown("""<div class="card" style="text-align:center;padding:16px 12px">
+<div style="font-size:0.7rem;color:#9ca3af;margin-bottom:8px">🏅 耐力剩余</div>
+<div style="font-size:1.4rem;color:#d1c7b8">—</div>
+<div style="font-size:0.7rem;color:#c4b5aa">运行脚本后显示</div>
 </div>""", unsafe_allow_html=True)
 
     st.markdown("<br>", unsafe_allow_html=True)
