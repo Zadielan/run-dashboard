@@ -85,6 +85,36 @@ except Exception as e:
     data["vo2max"] = None
     print(f"❌ VO2Max 失败：{e}")
 
+# Endurance Score
+try:
+    end_raw = garth.connectapi(f"/garmin-endurance-score/stats/enduranceScore?displayName={GARMIN_USER_ID}&startDate={yesterday}&endDate={yesterday}")
+    # 可能是列表或单个对象
+    if isinstance(end_raw, list) and end_raw:
+        end_raw = end_raw[-1]
+    data["endurance_score"] = {
+        "score": end_raw.get("enduranceScore") or end_raw.get("score"),
+        "level": end_raw.get("enduranceScoreLevel") or end_raw.get("level"),
+        "trend": end_raw.get("trend"),
+    }
+    print(f"✅ Endurance Score：{data['endurance_score']['score']}")
+except Exception as e:
+    data["endurance_score"] = None
+    print(f"⚠️ Endurance Score 失败（非致命）：{e}")
+
+# Body Battery 当前水平
+try:
+    bb_raw = garth.connectapi(f"/wellness-service/wellness/bodyBattery/{GARMIN_USER_ID}?startDate={yesterday}&endDate={yesterday}")
+    if isinstance(bb_raw, list) and bb_raw:
+        # 取最后一个值（当天最新）
+        latest_bb = bb_raw[-1]
+        data["body_battery_current"] = latest_bb.get("bodyBatteryLevel") or latest_bb.get("value")
+    else:
+        data["body_battery_current"] = None
+    print(f"✅ Body Battery 当前：{data['body_battery_current']}")
+except Exception as e:
+    data["body_battery_current"] = None
+    print(f"⚠️ Body Battery 当前失败：{e}")
+
 # 跑步动态详情（最近10次）
 running_acts = [a for a in acts if a.get("activityType", {}).get("typeKey", "") in ("running", "track_running", "treadmill_running")][:10]
 garmin_runs = []

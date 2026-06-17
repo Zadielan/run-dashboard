@@ -668,6 +668,72 @@ with tab_trend:
 # ──────────────────────────────────────────────────────
 
 with tab_body:
+    # ── At a Glance ──────────────────────────────────────
+    st.markdown("**📊 今日一览**")
+    g1, g2, g3, g4, g5 = st.columns(5)
+
+    sleep_d  = garmin.get("sleep", {}) or {}
+    hrv_d    = garmin.get("hrv", {}) or {}
+    es_d     = garmin.get("endurance_score") or {}
+    bb_cur   = garmin.get("body_battery_current")
+    bb_chg   = sleep_d.get("body_battery_change")
+    rhr      = sleep_d.get("resting_hr")
+    hrv_val  = hrv_d.get("last_night_avg")
+    hrv_7d   = hrv_d.get("weekly_avg")
+    hrv_st   = hrv_d.get("status","")
+    slp_h    = sleep_d.get("total_hours")
+    slp_sc   = sleep_d.get("sleep_score")
+
+    with g1:
+        rhr_color = "#2d4a3e" if rhr and rhr < 55 else "#b8952a" if rhr and rhr < 65 else "#c0543a"
+        st.markdown(f"""<div class="card" style="text-align:center;padding:16px 12px">
+<div style="font-size:0.7rem;color:#9ca3af;margin-bottom:8px">❤️ 静息心率</div>
+<div style="font-size:1.8rem;font-weight:800;color:{rhr_color}">{rhr or '—'}</div>
+<div style="font-size:0.72rem;color:#9ca3af">bpm</div>
+</div>""", unsafe_allow_html=True)
+
+    with g2:
+        bb_color = "#2d4a3e" if bb_cur and bb_cur >= 60 else "#b8952a" if bb_cur and bb_cur >= 30 else "#c0543a"
+        charged_str = f'<div style="font-size:0.72rem;color:#2d4a3e">+{bb_chg} 充电</div>' if bb_chg and bb_chg > 0 else ""
+        st.markdown(f"""<div class="card" style="text-align:center;padding:16px 12px">
+<div style="font-size:0.7rem;color:#9ca3af;margin-bottom:8px">⚡ Body Battery</div>
+<div style="font-size:1.8rem;font-weight:800;color:{bb_color}">{bb_cur or '—'}</div>
+{charged_str}
+</div>""", unsafe_allow_html=True)
+
+    with g3:
+        slp_color = "#2d4a3e" if slp_h and slp_h >= 7 else "#b8952a" if slp_h and slp_h >= 6 else "#c0543a"
+        sc_str = f'<div style="font-size:0.72rem;color:#9ca3af">得分 {slp_sc}</div>' if slp_sc else ""
+        st.markdown(f"""<div class="card" style="text-align:center;padding:16px 12px">
+<div style="font-size:0.7rem;color:#9ca3af;margin-bottom:8px">😴 睡眠</div>
+<div style="font-size:1.8rem;font-weight:800;color:{slp_color}">{slp_h or '—'}</div>
+<div style="font-size:0.72rem;color:#9ca3af">小时</div>
+{sc_str}
+</div>""", unsafe_allow_html=True)
+
+    with g4:
+        hrv_ok = "BALANCED" in (hrv_st or "")
+        hrv_color = "#2d4a3e" if hrv_ok else "#c0543a"
+        st.markdown(f"""<div class="card" style="text-align:center;padding:16px 12px">
+<div style="font-size:0.7rem;color:#9ca3af;margin-bottom:8px">💓 HRV</div>
+<div style="font-size:1.8rem;font-weight:800;color:{hrv_color}">{hrv_val or '—'}</div>
+<div style="font-size:0.72rem;color:{hrv_color}">{'平衡' if hrv_ok else '偏低'}</div>
+<div style="font-size:0.7rem;color:#9ca3af">7日均值 {hrv_7d or '—'}</div>
+</div>""", unsafe_allow_html=True)
+
+    with g5:
+        es_score = es_d.get("score") if es_d else None
+        es_level = es_d.get("level","") if es_d else ""
+        es_trend = es_d.get("trend","") if es_d else ""
+        level_cn = {"BASIC":"入门","INTERMEDIATE":"中级","TRAINED":"训练级","HIGHLY_TRAINED":"高训练级","ELITE":"精英"}.get((es_level or "").upper(), es_level or "—")
+        trend_arrow = "↑" if "UP" in (es_trend or "").upper() else "↓" if "DOWN" in (es_trend or "").upper() else "→"
+        st.markdown(f"""<div class="card" style="text-align:center;padding:16px 12px">
+<div style="font-size:0.7rem;color:#9ca3af;margin-bottom:8px">🏅 耐力评分</div>
+<div style="font-size:1.8rem;font-weight:800;color:#2d4a3e">{es_score or '—'}</div>
+<div style="font-size:0.72rem;color:#9ca3af">{level_cn} {trend_arrow if es_score else ''}</div>
+</div>""", unsafe_allow_html=True)
+
+    st.markdown("<br>", unsafe_allow_html=True)
     col_b1, col_b2 = st.columns([1, 1])
 
     with col_b1:
