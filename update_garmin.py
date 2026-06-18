@@ -19,6 +19,7 @@ REPO_DIR = os.path.expanduser("~/run-dashboard")
 
 # 先 pull，避免后面写文件后无法 rebase
 print("正在同步 GitHub 最新数据...")
+subprocess.run(["git", "-C", REPO_DIR, "stash"], capture_output=True)  # 丢弃本地未提交的变动
 subprocess.run(["git", "-C", REPO_DIR, "pull", "origin", "main", "--rebase"], check=True)
 
 print("正在连接 Garmin...")
