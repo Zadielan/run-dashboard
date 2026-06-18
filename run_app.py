@@ -148,37 +148,43 @@ def fetch_runs(strava, limit=50):
     runs.sort(key=lambda x: x["date"])
     return runs
 
-def fetch_garmin_data():
-    if "garmin_data" in st.session_state:
+def _bust(url):
+    """加时间戳防止 GitHub CDN / session 缓存"""
+    import time
+    return f"{url}?t={int(time.time())}"
+
+def fetch_garmin_data(force=False):
+    if not force and "garmin_data" in st.session_state:
         return st.session_state.garmin_data
     try:
-        r = http_req.get(GARMIN_DATA_URL, timeout=10); r.raise_for_status()
+        r = http_req.get(_bust(GARMIN_DATA_URL), timeout=10); r.raise_for_status()
         data = r.json()
     except Exception as e:
         data = {"error": f"读取 Garmin 数据失败: {e}"}
     st.session_state.garmin_data = data
     return data
 
-def fetch_cycle_data():
-    if "cycle_data" in st.session_state:
+def fetch_cycle_data(force=False):
+    if not force and "cycle_data" in st.session_state:
         return st.session_state.cycle_data
     try:
-        r = http_req.get(CYCLE_DATA_URL, timeout=10); r.raise_for_status()
+        r = http_req.get(_bust(CYCLE_DATA_URL), timeout=10); r.raise_for_status()
         data = r.json()
     except:
         data = []
     st.session_state.cycle_data = data
     return data
 
-def fetch_body_data():
-    if "body_data" in st.session_state:
+def fetch_body_data(force=False):
+    if not force and "body_data" in st.session_state:
         return st.session_state.body_data
     try:
-        r = http_req.get(BODY_DATA_URL, timeout=10); r.raise_for_status()
+        r = http_req.get(_bust(BODY_DATA_URL), timeout=10); r.raise_for_status()
         data = r.json()
     except:
         data = []
     st.session_state.body_data = data
+    return data
 
 
 def push_json_to_github(filename, data, commit_msg):
