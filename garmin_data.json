@@ -1,21 +1,21 @@
 {
-  "date": "2026-06-19",
-  "updated_at": "2026-06-20",
+  "date": "2026-06-20",
+  "updated_at": "2026-06-21",
   "sleep": {
-    "total_hours": 7.6,
-    "deep_min": 90,
-    "rem_min": 75,
-    "light_min": 293,
-    "awake_min": 0,
-    "body_battery_change": 68,
-    "resting_hr": 47,
-    "avg_overnight_hrv": 75.0,
-    "sleep_score": 88
+    "total_hours": 7.8,
+    "deep_min": 66,
+    "rem_min": 108,
+    "light_min": 296,
+    "awake_min": 25,
+    "body_battery_change": 36,
+    "resting_hr": 48,
+    "avg_overnight_hrv": 60.0,
+    "sleep_score": 79
   },
   "hrv": {
     "weekly_avg": 61,
-    "last_night_avg": 75,
-    "last_night_5min_high": 116,
+    "last_night_avg": 60,
+    "last_night_5min_high": 109,
     "baseline_low": 50,
     "baseline_high": 77,
     "status": "BALANCED",
@@ -53,9 +53,34 @@
       "calories": 595.0
     }
   ],
-  "vo2max": 46.0,
+  "vo2max": 47.0,
   "body_battery_current": null,
   "garmin_runs": [
+    {
+      "date": "2026-06-20",
+      "name": "County Dublin Running",
+      "distance_km": 8.0,
+      "duration_min": 50.5,
+      "avg_hr": 147.0,
+      "max_hr": 170.0,
+      "calories": 470.0,
+      "steps": 9062,
+      "cadence_spm": 179,
+      "stride_length_cm": 87.29000244140626,
+      "vertical_oscillation_cm": 7.640000152587891,
+      "vertical_ratio_pct": 8.8,
+      "ground_contact_ms": 250,
+      "avg_power_w": 213.0,
+      "normalized_power_w": 215.0,
+      "aerobic_te": 4.099999904632568,
+      "anaerobic_te": 0.0,
+      "te_label": "TEMPO",
+      "training_load": 169.0770721435547,
+      "stamina_start_pct": 100.0,
+      "stamina_end_pct": 67.0,
+      "body_battery_change": -12,
+      "vigorous_min": 54
+    },
     {
       "date": "2026-06-17",
       "name": "County Dublin Running",
@@ -280,31 +305,6 @@
       "stamina_end_pct": 46.0,
       "body_battery_change": -13,
       "vigorous_min": 49
-    },
-    {
-      "date": "2026-04-21",
-      "name": "County Dublin Running",
-      "distance_km": 0.0,
-      "duration_min": 0.0,
-      "avg_hr": null,
-      "max_hr": null,
-      "calories": null,
-      "steps": null,
-      "cadence_spm": null,
-      "stride_length_cm": null,
-      "vertical_oscillation_cm": null,
-      "vertical_ratio_pct": null,
-      "ground_contact_ms": null,
-      "avg_power_w": null,
-      "normalized_power_w": null,
-      "aerobic_te": null,
-      "anaerobic_te": null,
-      "te_label": null,
-      "training_load": null,
-      "stamina_start_pct": null,
-      "stamina_end_pct": null,
-      "body_battery_change": null,
-      "vigorous_min": null
     }
   ]
 }
