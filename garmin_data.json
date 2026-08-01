@@ -1,25 +1,25 @@
 {
-  "date": "2026-07-30",
-  "updated_at": "2026-07-31",
+  "date": "2026-07-31",
+  "updated_at": "2026-08-01",
   "sleep": {
-    "total_hours": 6.9,
-    "deep_min": 113,
-    "rem_min": 63,
-    "light_min": 238,
-    "awake_min": 5,
-    "body_battery_change": 31,
-    "resting_hr": 52,
-    "avg_overnight_hrv": 47.0,
-    "sleep_score": 74
+    "total_hours": 6.6,
+    "deep_min": 16,
+    "rem_min": 84,
+    "light_min": 297,
+    "awake_min": 7,
+    "body_battery_change": 32,
+    "resting_hr": 48,
+    "avg_overnight_hrv": 61.0,
+    "sleep_score": 69
   },
   "hrv": {
-    "weekly_avg": 62,
-    "last_night_avg": 47,
-    "last_night_5min_high": 73,
+    "weekly_avg": 60,
+    "last_night_avg": 61,
+    "last_night_5min_high": 97,
     "baseline_low": 51,
     "baseline_high": 82,
     "status": "BALANCED",
-    "feedback": "HRV_BALANCED_2"
+    "feedback": "HRV_BALANCED_6"
   },
   "strength": [
     {
@@ -44,6 +44,31 @@
   "vo2max": 48.0,
   "body_battery_current": null,
   "garmin_runs": [
+    {
+      "date": "2026-07-31",
+      "name": "County Dublin - W15 Fri Long Run - 25km Progress",
+      "distance_km": 26.51,
+      "duration_min": 170.4,
+      "avg_hr": 145.0,
+      "max_hr": 167.0,
+      "calories": 1571.0,
+      "steps": 30748,
+      "cadence_spm": 181,
+      "stride_length_cm": 85.47000122070312,
+      "vertical_oscillation_cm": 7.6000000000000005,
+      "vertical_ratio_pct": 8.9,
+      "ground_contact_ms": 252,
+      "avg_power_w": 215.0,
+      "normalized_power_w": 218.0,
+      "aerobic_te": 5.0,
+      "anaerobic_te": 0.0,
+      "te_label": "TEMPO",
+      "training_load": 317.04766845703125,
+      "stamina_start_pct": 100.0,
+      "stamina_end_pct": 25.0,
+      "body_battery_change": -30,
+      "vigorous_min": 183
+    },
     {
       "date": "2026-07-29",
       "name": "County Dublin - W15 Wed Intervals - Mile Repeats",
@@ -268,31 +293,6 @@
       "stamina_end_pct": 59.0,
       "body_battery_change": -15,
       "vigorous_min": 73
-    },
-    {
-      "date": "2026-07-03",
-      "name": "County Dublin Running",
-      "distance_km": 8.1,
-      "duration_min": 51.0,
-      "avg_hr": 146.0,
-      "max_hr": 165.0,
-      "calories": 489.0,
-      "steps": 9104,
-      "cadence_spm": 177,
-      "stride_length_cm": 88.17999877929688,
-      "vertical_oscillation_cm": 7.80999984741211,
-      "vertical_ratio_pct": 8.9,
-      "ground_contact_ms": 252,
-      "avg_power_w": 217.0,
-      "normalized_power_w": 221.0,
-      "aerobic_te": 3.9000000953674316,
-      "anaerobic_te": 0.0,
-      "te_label": "TEMPO",
-      "training_load": 150.66209411621094,
-      "stamina_start_pct": 92.0,
-      "stamina_end_pct": 59.0,
-      "body_battery_change": -10,
-      "vigorous_min": 53
     }
   ]
 }
