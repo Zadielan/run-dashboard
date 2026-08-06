@@ -1,25 +1,25 @@
 {
-  "date": "2026-08-04",
-  "updated_at": "2026-08-05",
+  "date": "2026-08-05",
+  "updated_at": "2026-08-06",
   "sleep": {
-    "total_hours": 10.0,
-    "deep_min": 81,
-    "rem_min": 123,
-    "light_min": 398,
-    "awake_min": 25,
-    "body_battery_change": 36,
-    "resting_hr": 51,
-    "avg_overnight_hrv": 55.0,
-    "sleep_score": 78
+    "total_hours": 8.6,
+    "deep_min": 52,
+    "rem_min": 76,
+    "light_min": 388,
+    "awake_min": 14,
+    "body_battery_change": 39,
+    "resting_hr": 49,
+    "avg_overnight_hrv": 65.0,
+    "sleep_score": 81
   },
   "hrv": {
-    "weekly_avg": 55,
-    "last_night_avg": 55,
-    "last_night_5min_high": 87,
+    "weekly_avg": 56,
+    "last_night_avg": 65,
+    "last_night_5min_high": 100,
     "baseline_low": 52,
-    "baseline_high": 83,
+    "baseline_high": 82,
     "status": "BALANCED",
-    "feedback": "HRV_BALANCED_2"
+    "feedback": "HRV_BALANCED_7"
   },
   "strength": [
     {
@@ -50,6 +50,31 @@
   "vo2max": 49.0,
   "body_battery_current": null,
   "garmin_runs": [
+    {
+      "date": "2026-08-05",
+      "name": "County Dublin - W16 Wed Tempo - Tempo 3-2-1 (12k",
+      "distance_km": 13.64,
+      "duration_min": 85.5,
+      "avg_hr": 149.0,
+      "max_hr": 165.0,
+      "calories": 824.0,
+      "steps": 15152,
+      "cadence_spm": 178,
+      "stride_length_cm": 89.09000244140626,
+      "vertical_oscillation_cm": 7.680000305175781,
+      "vertical_ratio_pct": 8.6,
+      "ground_contact_ms": 248,
+      "avg_power_w": 221.0,
+      "normalized_power_w": 230.0,
+      "aerobic_te": 4.800000190734863,
+      "anaerobic_te": 0.0,
+      "te_label": "LACTATE_THRESHOLD",
+      "training_load": 256.6112976074219,
+      "stamina_start_pct": 100.0,
+      "stamina_end_pct": 54.0,
+      "body_battery_change": -17,
+      "vigorous_min": 84
+    },
     {
       "date": "2026-08-03",
       "name": "County Dublin - W15 Mon Easy Run - 15km Easy Run",
@@ -274,31 +299,6 @@
       "stamina_end_pct": 2.0,
       "body_battery_change": -35,
       "vigorous_min": 181
-    },
-    {
-      "date": "2026-07-09",
-      "name": "Brighton and Hove - Base",
-      "distance_km": 13.02,
-      "duration_min": 87.3,
-      "avg_hr": 137.0,
-      "max_hr": 156.0,
-      "calories": 765.0,
-      "steps": 15376,
-      "cadence_spm": 176,
-      "stride_length_cm": 83.87000122070313,
-      "vertical_oscillation_cm": 7.75999984741211,
-      "vertical_ratio_pct": 9.2,
-      "ground_contact_ms": 259,
-      "avg_power_w": 199.0,
-      "normalized_power_w": 199.0,
-      "aerobic_te": 3.799999952316284,
-      "anaerobic_te": 0.0,
-      "te_label": "AEROBIC_BASE",
-      "training_load": 149.72927856445312,
-      "stamina_start_pct": 96.0,
-      "stamina_end_pct": 45.0,
-      "body_battery_change": -17,
-      "vigorous_min": 93
     }
   ]
 }
