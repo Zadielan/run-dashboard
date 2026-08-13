@@ -1,26 +1,8 @@
 {
-  "date": "2026-08-11",
-  "updated_at": "2026-08-12",
-  "sleep": {
-    "total_hours": 8.8,
-    "deep_min": 77,
-    "rem_min": 99,
-    "light_min": 354,
-    "awake_min": 6,
-    "body_battery_change": 22,
-    "resting_hr": 55,
-    "avg_overnight_hrv": 45.0,
-    "sleep_score": 79
-  },
-  "hrv": {
-    "weekly_avg": 51,
-    "last_night_avg": 45,
-    "last_night_5min_high": 81,
-    "baseline_low": 52,
-    "baseline_high": 81,
-    "status": "UNBALANCED",
-    "feedback": "HRV_UNBALANCED_12"
-  },
+  "date": "2026-08-12",
+  "updated_at": "2026-08-13",
+  "sleep": null,
+  "hrv": null,
   "strength": [
     {
       "date": "2026-08-10",
