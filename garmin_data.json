@@ -1,9 +1,33 @@
 {
-  "date": "2026-08-12",
-  "updated_at": "2026-08-13",
-  "sleep": null,
-  "hrv": null,
+  "date": "2026-08-13",
+  "updated_at": "2026-08-14",
+  "sleep": {
+    "total_hours": 8.0,
+    "deep_min": 67,
+    "rem_min": 69,
+    "light_min": 346,
+    "awake_min": 10,
+    "body_battery_change": 32,
+    "resting_hr": 54,
+    "avg_overnight_hrv": 49.0,
+    "sleep_score": 78
+  },
+  "hrv": {
+    "weekly_avg": 48,
+    "last_night_avg": 49,
+    "last_night_5min_high": 59,
+    "baseline_low": 53,
+    "baseline_high": 81,
+    "status": "UNBALANCED",
+    "feedback": "HRV_UNBALANCED_10"
+  },
   "strength": [
+    {
+      "date": "2026-08-13",
+      "name": "Strength",
+      "duration_min": 15,
+      "calories": 57.0
+    },
     {
       "date": "2026-08-10",
       "name": "Strength",
@@ -32,6 +56,31 @@
   "vo2max": 49.0,
   "body_battery_current": null,
   "garmin_runs": [
+    {
+      "date": "2026-08-13",
+      "name": "County Dublin - W17 Thu Easy Run - 13km Easy Run",
+      "distance_km": 13.16,
+      "duration_min": 86.8,
+      "avg_hr": 137.0,
+      "max_hr": 160.0,
+      "calories": 750.0,
+      "steps": 15608,
+      "cadence_spm": 180,
+      "stride_length_cm": 83.50999755859375,
+      "vertical_oscillation_cm": 7.540000152587891,
+      "vertical_ratio_pct": 9.0,
+      "ground_contact_ms": 254,
+      "avg_power_w": 199.0,
+      "normalized_power_w": 201.0,
+      "aerobic_te": 3.799999952316284,
+      "anaerobic_te": 0.0,
+      "te_label": "AEROBIC_BASE",
+      "training_load": 158.74501037597656,
+      "stamina_start_pct": 99.0,
+      "stamina_end_pct": 67.0,
+      "body_battery_change": -18,
+      "vigorous_min": 90
+    },
     {
       "date": "2026-08-11",
       "name": "County Dublin - W17 Tue Tempo - Over and Unders",
@@ -256,31 +305,6 @@
       "stamina_end_pct": 80.0,
       "body_battery_change": -14,
       "vigorous_min": 54
-    },
-    {
-      "date": "2026-07-22",
-      "name": "Chamonix-Mont-Blanc - W14 Wed Tempo - Tempo 5km (13km)",
-      "distance_km": 13.08,
-      "duration_min": 82.9,
-      "avg_hr": 143.0,
-      "max_hr": 179.0,
-      "calories": 760.0,
-      "steps": 14700,
-      "cadence_spm": 175,
-      "stride_length_cm": 88.52000122070314,
-      "vertical_oscillation_cm": 7.75999984741211,
-      "vertical_ratio_pct": 8.9,
-      "ground_contact_ms": 253,
-      "avg_power_w": 214.0,
-      "normalized_power_w": 217.0,
-      "aerobic_te": 4.599999904632568,
-      "anaerobic_te": 2.200000047683716,
-      "te_label": "TEMPO",
-      "training_load": 257.9726257324219,
-      "stamina_start_pct": 100.0,
-      "stamina_end_pct": 51.0,
-      "body_battery_change": -22,
-      "vigorous_min": 96
     }
   ]
 }
