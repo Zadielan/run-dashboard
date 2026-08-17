@@ -1,25 +1,25 @@
 {
-  "date": "2026-08-15",
-  "updated_at": "2026-08-16",
+  "date": "2026-08-16",
+  "updated_at": "2026-08-17",
   "sleep": {
-    "total_hours": 8.6,
-    "deep_min": 67,
-    "rem_min": 70,
-    "light_min": 378,
-    "awake_min": 28,
-    "body_battery_change": 35,
-    "resting_hr": 51,
-    "avg_overnight_hrv": 59.0,
+    "total_hours": 7.4,
+    "deep_min": 76,
+    "rem_min": 67,
+    "light_min": 302,
+    "awake_min": 4,
+    "body_battery_change": 37,
+    "resting_hr": 53,
+    "avg_overnight_hrv": 52.0,
     "sleep_score": 79
   },
   "hrv": {
-    "weekly_avg": 49,
-    "last_night_avg": 59,
-    "last_night_5min_high": 84,
+    "weekly_avg": 50,
+    "last_night_avg": 52,
+    "last_night_5min_high": 105,
     "baseline_low": 52,
-    "baseline_high": 80,
+    "baseline_high": 79,
     "status": "UNBALANCED",
-    "feedback": "HRV_UNBALANCED_11"
+    "feedback": "HRV_UNBALANCED_8"
   },
   "strength": [
     {
