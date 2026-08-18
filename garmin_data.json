@@ -1,27 +1,33 @@
 {
-  "date": "2026-08-16",
-  "updated_at": "2026-08-17",
+  "date": "2026-08-17",
+  "updated_at": "2026-08-18",
   "sleep": {
-    "total_hours": 7.4,
-    "deep_min": 76,
-    "rem_min": 67,
-    "light_min": 302,
-    "awake_min": 4,
-    "body_battery_change": 37,
-    "resting_hr": 53,
-    "avg_overnight_hrv": 52.0,
-    "sleep_score": 79
+    "total_hours": 8.4,
+    "deep_min": 58,
+    "rem_min": 72,
+    "light_min": 373,
+    "awake_min": 5,
+    "body_battery_change": 49,
+    "resting_hr": 48,
+    "avg_overnight_hrv": 74.0,
+    "sleep_score": 87
   },
   "hrv": {
-    "weekly_avg": 50,
-    "last_night_avg": 52,
-    "last_night_5min_high": 105,
+    "weekly_avg": 53,
+    "last_night_avg": 74,
+    "last_night_5min_high": 110,
     "baseline_low": 52,
     "baseline_high": 79,
-    "status": "UNBALANCED",
-    "feedback": "HRV_UNBALANCED_8"
+    "status": "BALANCED",
+    "feedback": "HRV_BALANCED_1"
   },
   "strength": [
+    {
+      "date": "2026-08-17",
+      "name": "Strength",
+      "duration_min": 50,
+      "calories": 132.0
+    },
     {
       "date": "2026-08-13",
       "name": "Strength",
@@ -45,12 +51,6 @@
       "name": "Strength",
       "duration_min": 46,
       "calories": 150.0
-    },
-    {
-      "date": "2026-06-17",
-      "name": "Strength",
-      "duration_min": 41,
-      "calories": 149.0
     }
   ],
   "vo2max": 49.0,
