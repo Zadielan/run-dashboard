@@ -1,25 +1,25 @@
 {
-  "date": "2026-08-17",
-  "updated_at": "2026-08-18",
+  "date": "2026-08-18",
+  "updated_at": "2026-08-19",
   "sleep": {
-    "total_hours": 8.4,
+    "total_hours": 7.8,
     "deep_min": 58,
-    "rem_min": 72,
-    "light_min": 373,
-    "awake_min": 5,
-    "body_battery_change": 49,
-    "resting_hr": 48,
-    "avg_overnight_hrv": 74.0,
-    "sleep_score": 87
+    "rem_min": 57,
+    "light_min": 352,
+    "awake_min": 40,
+    "body_battery_change": 31,
+    "resting_hr": 52,
+    "avg_overnight_hrv": 54.0,
+    "sleep_score": 74
   },
   "hrv": {
-    "weekly_avg": 53,
-    "last_night_avg": 74,
-    "last_night_5min_high": 110,
+    "weekly_avg": 55,
+    "last_night_avg": 54,
+    "last_night_5min_high": 76,
     "baseline_low": 52,
     "baseline_high": 79,
     "status": "BALANCED",
-    "feedback": "HRV_BALANCED_1"
+    "feedback": "HRV_BALANCED_8"
   },
   "strength": [
     {
@@ -56,6 +56,31 @@
   "vo2max": 49.0,
   "body_battery_current": null,
   "garmin_runs": [
+    {
+      "date": "2026-08-18",
+      "name": "County Dublin - W18 Tue Intervals - 1km Repeats",
+      "distance_km": 10.34,
+      "duration_min": 60.6,
+      "avg_hr": 145.0,
+      "max_hr": 177.0,
+      "calories": 573.0,
+      "steps": 10724,
+      "cadence_spm": 177,
+      "stride_length_cm": 95.07000122070313,
+      "vertical_oscillation_cm": 8.240000152587891,
+      "vertical_ratio_pct": 8.7,
+      "ground_contact_ms": 249,
+      "avg_power_w": 229.0,
+      "normalized_power_w": 235.0,
+      "aerobic_te": 4.199999809265137,
+      "anaerobic_te": 1.0,
+      "te_label": "LACTATE_THRESHOLD",
+      "training_load": 223.86814880371094,
+      "stamina_start_pct": 100.0,
+      "stamina_end_pct": 62.0,
+      "body_battery_change": -11,
+      "vigorous_min": 60
+    },
     {
       "date": "2026-08-15",
       "name": "County Dublin - W17 Sat Long Run - 31km Race Pra",
@@ -280,31 +305,6 @@
       "stamina_end_pct": 50.0,
       "body_battery_change": -20,
       "vigorous_min": 93
-    },
-    {
-      "date": "2026-07-27",
-      "name": "County Dublin Running",
-      "distance_km": 16.01,
-      "duration_min": 105.3,
-      "avg_hr": 145.0,
-      "max_hr": 163.0,
-      "calories": 974.0,
-      "steps": 18838,
-      "cadence_spm": 179,
-      "stride_length_cm": 84.05999755859375,
-      "vertical_oscillation_cm": 7.6099998474121096,
-      "vertical_ratio_pct": 9.1,
-      "ground_contact_ms": 255,
-      "avg_power_w": 206.0,
-      "normalized_power_w": 208.0,
-      "aerobic_te": 4.5,
-      "anaerobic_te": 0.10000000149011612,
-      "te_label": "TEMPO",
-      "training_load": 222.19691467285156,
-      "stamina_start_pct": 100.0,
-      "stamina_end_pct": 54.0,
-      "body_battery_change": -27,
-      "vigorous_min": 112
     }
   ]
 }
