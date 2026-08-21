@@ -1,27 +1,33 @@
 {
-  "date": "2026-08-19",
-  "updated_at": "2026-08-20",
+  "date": "2026-08-20",
+  "updated_at": "2026-08-21",
   "sleep": {
-    "total_hours": 7.2,
-    "deep_min": 141,
-    "rem_min": 59,
-    "light_min": 231,
-    "awake_min": 0,
-    "body_battery_change": 35,
-    "resting_hr": 52,
-    "avg_overnight_hrv": 53.0,
-    "sleep_score": 78
+    "total_hours": 7.3,
+    "deep_min": 13,
+    "rem_min": 76,
+    "light_min": 350,
+    "awake_min": 3,
+    "body_battery_change": 36,
+    "resting_hr": 48,
+    "avg_overnight_hrv": 66.0,
+    "sleep_score": 68
   },
   "hrv": {
-    "weekly_avg": 55,
-    "last_night_avg": 53,
-    "last_night_5min_high": 79,
+    "weekly_avg": 58,
+    "last_night_avg": 66,
+    "last_night_5min_high": 102,
     "baseline_low": 52,
     "baseline_high": 78,
     "status": "BALANCED",
-    "feedback": "HRV_BALANCED_5"
+    "feedback": "HRV_BALANCED_6"
   },
   "strength": [
+    {
+      "date": "2026-08-19",
+      "name": "Strength",
+      "duration_min": 71,
+      "calories": 174.0
+    },
     {
       "date": "2026-08-17",
       "name": "Strength",
@@ -45,17 +51,36 @@
       "name": "Strength",
       "duration_min": 53,
       "calories": 135.0
-    },
-    {
-      "date": "2026-07-30",
-      "name": "Strength",
-      "duration_min": 46,
-      "calories": 150.0
     }
   ],
   "vo2max": 49.0,
   "body_battery_current": null,
   "garmin_runs": [
+    {
+      "date": "2026-08-20",
+      "name": "County Dublin - W19 Thu Long Run - 34km Race Pra",
+      "distance_km": 34.01,
+      "duration_min": 217.9,
+      "avg_hr": 145.0,
+      "max_hr": 174.0,
+      "calories": 1981.0,
+      "steps": 39712,
+      "cadence_spm": 183,
+      "stride_length_cm": 84.80000000000001,
+      "vertical_oscillation_cm": 7.469999694824219,
+      "vertical_ratio_pct": 8.8,
+      "ground_contact_ms": 250,
+      "avg_power_w": 205.0,
+      "normalized_power_w": 207.0,
+      "aerobic_te": 5.0,
+      "anaerobic_te": 0.4000000059604645,
+      "te_label": "TEMPO",
+      "training_load": 405.5849609375,
+      "stamina_start_pct": 100.0,
+      "stamina_end_pct": 17.0,
+      "body_battery_change": -43,
+      "vigorous_min": 229
+    },
     {
       "date": "2026-08-18",
       "name": "County Dublin - W18 Tue Intervals - 1km Repeats",
@@ -280,31 +305,6 @@
       "stamina_end_pct": 25.0,
       "body_battery_change": -30,
       "vigorous_min": 183
-    },
-    {
-      "date": "2026-07-29",
-      "name": "County Dublin - W15 Wed Intervals - Mile Repeats",
-      "distance_km": 15.03,
-      "duration_min": 90.9,
-      "avg_hr": 148.0,
-      "max_hr": 175.0,
-      "calories": 873.0,
-      "steps": 16084,
-      "cadence_spm": 176,
-      "stride_length_cm": 92.65999755859376,
-      "vertical_oscillation_cm": 8.030000305175781,
-      "vertical_ratio_pct": 8.7,
-      "ground_contact_ms": 250,
-      "avg_power_w": 224.0,
-      "normalized_power_w": 230.0,
-      "aerobic_te": 4.800000190734863,
-      "anaerobic_te": 1.0,
-      "te_label": "LACTATE_THRESHOLD",
-      "training_load": 267.146484375,
-      "stamina_start_pct": 100.0,
-      "stamina_end_pct": 50.0,
-      "body_battery_change": -20,
-      "vigorous_min": 93
     }
   ]
 }
