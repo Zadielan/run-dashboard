@@ -1,15 +1,25 @@
 {
-  "date": "2026-08-24",
-  "updated_at": "2026-08-25",
-  "sleep": null,
+  "date": "2026-08-25",
+  "updated_at": "2026-08-26",
+  "sleep": {
+    "total_hours": 9.9,
+    "deep_min": 75,
+    "rem_min": 111,
+    "light_min": 406,
+    "awake_min": 9,
+    "body_battery_change": 55,
+    "resting_hr": 47,
+    "avg_overnight_hrv": 73.0,
+    "sleep_score": 87
+  },
   "hrv": {
-    "weekly_avg": 57,
-    "last_night_avg": null,
-    "last_night_5min_high": null,
+    "weekly_avg": 60,
+    "last_night_avg": 73,
+    "last_night_5min_high": 112,
     "baseline_low": 51,
     "baseline_high": 77,
     "status": "BALANCED",
-    "feedback": "HRV_BALANCED_6"
+    "feedback": "HRV_BALANCED_7"
   },
   "strength": [
     {
@@ -46,6 +56,31 @@
   "vo2max": 49.0,
   "body_battery_current": null,
   "garmin_runs": [
+    {
+      "date": "2026-08-25",
+      "name": "Chaoyang - W18 Tue Easy Run - 10km Easy Run",
+      "distance_km": 13.01,
+      "duration_min": 88.7,
+      "avg_hr": 130.0,
+      "max_hr": 150.0,
+      "calories": 724.0,
+      "steps": 15554,
+      "cadence_spm": 174,
+      "stride_length_cm": 82.97000122070312,
+      "vertical_oscillation_cm": 7.740000152587891,
+      "vertical_ratio_pct": 9.3,
+      "ground_contact_ms": 260,
+      "avg_power_w": 191.0,
+      "normalized_power_w": 191.0,
+      "aerobic_te": 3.4000000953674316,
+      "anaerobic_te": 0.20000000298023224,
+      "te_label": "AEROBIC_BASE",
+      "training_load": 126.32923889160156,
+      "stamina_start_pct": 100.0,
+      "stamina_end_pct": 70.0,
+      "body_battery_change": -17,
+      "vigorous_min": 95
+    },
     {
       "date": "2026-08-20",
       "name": "County Dublin - W19 Thu Long Run - 34km Race Pra",
@@ -270,31 +305,6 @@
       "stamina_end_pct": 61.0,
       "body_battery_change": -22,
       "vigorous_min": 109
-    },
-    {
-      "date": "2026-07-31",
-      "name": "County Dublin - W15 Fri Long Run - 25km Progress",
-      "distance_km": 26.51,
-      "duration_min": 170.4,
-      "avg_hr": 145.0,
-      "max_hr": 167.0,
-      "calories": 1571.0,
-      "steps": 30748,
-      "cadence_spm": 181,
-      "stride_length_cm": 85.47000122070312,
-      "vertical_oscillation_cm": 7.6000000000000005,
-      "vertical_ratio_pct": 8.9,
-      "ground_contact_ms": 252,
-      "avg_power_w": 215.0,
-      "normalized_power_w": 218.0,
-      "aerobic_te": 5.0,
-      "anaerobic_te": 0.0,
-      "te_label": "TEMPO",
-      "training_load": 317.04766845703125,
-      "stamina_start_pct": 100.0,
-      "stamina_end_pct": 25.0,
-      "body_battery_change": -30,
-      "vigorous_min": 183
     }
   ]
 }
