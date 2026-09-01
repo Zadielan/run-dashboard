@@ -1,8 +1,26 @@
 {
-  "date": "2026-08-30",
-  "updated_at": "2026-08-31",
-  "sleep": null,
-  "hrv": null,
+  "date": "2026-08-31",
+  "updated_at": "2026-09-01",
+  "sleep": {
+    "total_hours": 8.3,
+    "deep_min": 69,
+    "rem_min": 100,
+    "light_min": 328,
+    "awake_min": 11,
+    "body_battery_change": 89,
+    "resting_hr": 43,
+    "avg_overnight_hrv": 90.0,
+    "sleep_score": 91
+  },
+  "hrv": {
+    "weekly_avg": 74,
+    "last_night_avg": 90,
+    "last_night_5min_high": 136,
+    "baseline_low": 51,
+    "baseline_high": 75,
+    "status": "BALANCED",
+    "feedback": "HRV_BALANCED_5"
+  },
   "strength": [
     {
       "date": "2026-08-19",
@@ -39,6 +57,31 @@
   "body_battery_current": null,
   "garmin_runs": [
     {
+      "date": "2026-08-31",
+      "name": "Nanning - W20 Mon Tempo - Tempo 2km Repeat",
+      "distance_km": 13.02,
+      "duration_min": 79.3,
+      "avg_hr": 143.0,
+      "max_hr": 165.0,
+      "calories": 726.0,
+      "steps": 14294,
+      "cadence_spm": 180,
+      "stride_length_cm": 90.17999877929688,
+      "vertical_oscillation_cm": 7.780000305175782,
+      "vertical_ratio_pct": 8.7,
+      "ground_contact_ms": 248,
+      "avg_power_w": 211.0,
+      "normalized_power_w": 214.0,
+      "aerobic_te": 4.5,
+      "anaerobic_te": 0.0,
+      "te_label": "TEMPO",
+      "training_load": 226.49942016601562,
+      "stamina_start_pct": 100.0,
+      "stamina_end_pct": 62.0,
+      "body_battery_change": -13,
+      "vigorous_min": 90
+    },
+    {
       "date": "2026-08-28",
       "name": "Nanning - W19 Fri Easy Run - 14km Easy Run",
       "distance_km": 15.01,
@@ -61,7 +104,7 @@
       "stamina_start_pct": 99.0,
       "stamina_end_pct": 65.0,
       "body_battery_change": -18,
-      "vigorous_min": null
+      "vigorous_min": 102
     },
     {
       "date": "2026-08-25",
@@ -262,31 +305,6 @@
       "stamina_end_pct": 59.0,
       "body_battery_change": -21,
       "vigorous_min": 106
-    },
-    {
-      "date": "2026-08-05",
-      "name": "County Dublin - W16 Wed Tempo - Tempo 3-2-1 (12k",
-      "distance_km": 13.64,
-      "duration_min": 85.5,
-      "avg_hr": 149.0,
-      "max_hr": 165.0,
-      "calories": 824.0,
-      "steps": 15152,
-      "cadence_spm": 178,
-      "stride_length_cm": 89.09000244140626,
-      "vertical_oscillation_cm": 7.680000305175781,
-      "vertical_ratio_pct": 8.6,
-      "ground_contact_ms": 248,
-      "avg_power_w": 221.0,
-      "normalized_power_w": 230.0,
-      "aerobic_te": 4.800000190734863,
-      "anaerobic_te": 0.0,
-      "te_label": "LACTATE_THRESHOLD",
-      "training_load": 256.6112976074219,
-      "stamina_start_pct": 100.0,
-      "stamina_end_pct": 54.0,
-      "body_battery_change": -17,
-      "vigorous_min": 84
     }
   ]
 }
