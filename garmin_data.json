@@ -1,25 +1,25 @@
 {
-  "date": "2026-08-31",
-  "updated_at": "2026-09-01",
+  "date": "2026-09-01",
+  "updated_at": "2026-09-02",
   "sleep": {
-    "total_hours": 8.3,
-    "deep_min": 69,
-    "rem_min": 100,
-    "light_min": 328,
-    "awake_min": 11,
-    "body_battery_change": 89,
-    "resting_hr": 43,
-    "avg_overnight_hrv": 90.0,
-    "sleep_score": 91
+    "total_hours": 7.5,
+    "deep_min": 64,
+    "rem_min": 53,
+    "light_min": 332,
+    "awake_min": 9,
+    "body_battery_change": 66,
+    "resting_hr": 50,
+    "avg_overnight_hrv": 78.0,
+    "sleep_score": 79
   },
   "hrv": {
-    "weekly_avg": 74,
-    "last_night_avg": 90,
-    "last_night_5min_high": 136,
-    "baseline_low": 51,
+    "weekly_avg": 75,
+    "last_night_avg": 78,
+    "last_night_5min_high": 98,
+    "baseline_low": 52,
     "baseline_high": 75,
     "status": "BALANCED",
-    "feedback": "HRV_BALANCED_5"
+    "feedback": "HRV_BALANCED_6"
   },
   "strength": [
     {
@@ -56,6 +56,31 @@
   "vo2max": 49.0,
   "body_battery_current": null,
   "garmin_runs": [
+    {
+      "date": "2026-09-02",
+      "name": "Nanning Running",
+      "distance_km": 10.01,
+      "duration_min": 62.7,
+      "avg_hr": 144.0,
+      "max_hr": 168.0,
+      "calories": 578.0,
+      "steps": 11270,
+      "cadence_spm": 179,
+      "stride_length_cm": 88.47000122070312,
+      "vertical_oscillation_cm": 7.75,
+      "vertical_ratio_pct": 8.8,
+      "ground_contact_ms": 250,
+      "avg_power_w": 208.0,
+      "normalized_power_w": 211.0,
+      "aerobic_te": 3.9000000953674316,
+      "anaerobic_te": 1.399999976158142,
+      "te_label": "AEROBIC_BASE",
+      "training_load": 185.13778686523438,
+      "stamina_start_pct": 100.0,
+      "stamina_end_pct": 69.0,
+      "body_battery_change": -18,
+      "vigorous_min": 66
+    },
     {
       "date": "2026-08-31",
       "name": "Nanning - W20 Mon Tempo - Tempo 2km Repeat",
@@ -280,31 +305,6 @@
       "stamina_end_pct": 28.0,
       "body_battery_change": null,
       "vigorous_min": 206
-    },
-    {
-      "date": "2026-08-07",
-      "name": "County Dublin - W16 Fri Easy Run - 14km Easy Run",
-      "distance_km": 16.01,
-      "duration_min": 103.0,
-      "avg_hr": 143.0,
-      "max_hr": 165.0,
-      "calories": 932.0,
-      "steps": 18616,
-      "cadence_spm": 181,
-      "stride_length_cm": 85.05000000000001,
-      "vertical_oscillation_cm": 7.55999984741211,
-      "vertical_ratio_pct": 8.9,
-      "ground_contact_ms": 252,
-      "avg_power_w": 204.0,
-      "normalized_power_w": 206.0,
-      "aerobic_te": 4.400000095367432,
-      "anaerobic_te": 0.5,
-      "te_label": "TEMPO",
-      "training_load": 224.33607482910156,
-      "stamina_start_pct": 100.0,
-      "stamina_end_pct": 59.0,
-      "body_battery_change": -21,
-      "vigorous_min": 106
     }
   ]
 }
