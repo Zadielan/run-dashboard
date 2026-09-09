@@ -1,6 +1,6 @@
 {
-  "date": "2026-09-07",
-  "updated_at": "2026-09-08",
+  "date": "2026-09-08",
+  "updated_at": "2026-09-09",
   "sleep": null,
   "hrv": null,
   "strength": [
@@ -38,6 +38,31 @@
   "vo2max": 49.0,
   "body_battery_current": null,
   "garmin_runs": [
+    {
+      "date": "2026-09-09",
+      "name": "Shinjuku Ward Running",
+      "distance_km": 15.38,
+      "duration_min": 96.0,
+      "avg_hr": 143.0,
+      "max_hr": 170.0,
+      "calories": 869.0,
+      "steps": 17154,
+      "cadence_spm": 178,
+      "stride_length_cm": 88.97999877929688,
+      "vertical_oscillation_cm": 7.70999984741211,
+      "vertical_ratio_pct": 8.7,
+      "ground_contact_ms": 249,
+      "avg_power_w": 212.0,
+      "normalized_power_w": 214.0,
+      "aerobic_te": 4.699999809265137,
+      "anaerobic_te": 1.100000023841858,
+      "te_label": "TEMPO",
+      "training_load": 252.14520263671875,
+      "stamina_start_pct": 100.0,
+      "stamina_end_pct": 58.0,
+      "body_battery_change": -16,
+      "vigorous_min": 118
+    },
     {
       "date": "2026-09-04",
       "name": "Running",
@@ -262,31 +287,6 @@
       "stamina_end_pct": 67.0,
       "body_battery_change": -18,
       "vigorous_min": 90
-    },
-    {
-      "date": "2026-08-11",
-      "name": "County Dublin - W17 Tue Tempo - Over and Unders",
-      "distance_km": 13.03,
-      "duration_min": 77.2,
-      "avg_hr": 155.0,
-      "max_hr": 173.0,
-      "calories": 767.0,
-      "steps": 13846,
-      "cadence_spm": 180,
-      "stride_length_cm": 93.07999877929689,
-      "vertical_oscillation_cm": 8.01999969482422,
-      "vertical_ratio_pct": 8.6,
-      "ground_contact_ms": 248,
-      "avg_power_w": 224.0,
-      "normalized_power_w": 227.0,
-      "aerobic_te": 5.0,
-      "anaerobic_te": 1.600000023841858,
-      "te_label": "LACTATE_THRESHOLD",
-      "training_load": 312.63568115234375,
-      "stamina_start_pct": 96.0,
-      "stamina_end_pct": 43.0,
-      "body_battery_change": -16,
-      "vigorous_min": 77
     }
   ]
 }
