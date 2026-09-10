@@ -1,8 +1,26 @@
 {
-  "date": "2026-09-08",
-  "updated_at": "2026-09-09",
-  "sleep": null,
-  "hrv": null,
+  "date": "2026-09-09",
+  "updated_at": "2026-09-10",
+  "sleep": {
+    "total_hours": 6.4,
+    "deep_min": 104,
+    "rem_min": 36,
+    "light_min": 245,
+    "awake_min": 15,
+    "body_battery_change": 25,
+    "resting_hr": 49,
+    "avg_overnight_hrv": 47.0,
+    "sleep_score": 55
+  },
+  "hrv": {
+    "weekly_avg": 70,
+    "last_night_avg": 47,
+    "last_night_5min_high": 91,
+    "baseline_low": 53,
+    "baseline_high": 79,
+    "status": "BALANCED",
+    "feedback": "HRV_BALANCED_3"
+  },
   "strength": [
     {
       "date": "2026-08-19",
@@ -38,6 +56,31 @@
   "vo2max": 49.0,
   "body_battery_current": null,
   "garmin_runs": [
+    {
+      "date": "2026-09-10",
+      "name": "Shibuya Ward - W21 Thu Intervals - 800m Repeats",
+      "distance_km": 12.51,
+      "duration_min": 69.3,
+      "avg_hr": 155.0,
+      "max_hr": 170.0,
+      "calories": 703.0,
+      "steps": 12372,
+      "cadence_spm": 180,
+      "stride_length_cm": 99.95999755859376,
+      "vertical_oscillation_cm": 8.30999984741211,
+      "vertical_ratio_pct": 8.3,
+      "ground_contact_ms": 243,
+      "avg_power_w": 236.0,
+      "normalized_power_w": 238.0,
+      "aerobic_te": 5.0,
+      "anaerobic_te": 1.7000000476837158,
+      "te_label": "LACTATE_THRESHOLD",
+      "training_load": 322.3919677734375,
+      "stamina_start_pct": 97.0,
+      "stamina_end_pct": 43.0,
+      "body_battery_change": -11,
+      "vigorous_min": 76
+    },
     {
       "date": "2026-09-09",
       "name": "Shinjuku Ward Running",
@@ -262,31 +305,6 @@
       "stamina_end_pct": 18.0,
       "body_battery_change": -40,
       "vigorous_min": 218
-    },
-    {
-      "date": "2026-08-13",
-      "name": "County Dublin - W17 Thu Easy Run - 13km Easy Run",
-      "distance_km": 13.16,
-      "duration_min": 86.8,
-      "avg_hr": 137.0,
-      "max_hr": 160.0,
-      "calories": 750.0,
-      "steps": 15608,
-      "cadence_spm": 180,
-      "stride_length_cm": 83.50999755859375,
-      "vertical_oscillation_cm": 7.540000152587891,
-      "vertical_ratio_pct": 9.0,
-      "ground_contact_ms": 254,
-      "avg_power_w": 199.0,
-      "normalized_power_w": 201.0,
-      "aerobic_te": 3.799999952316284,
-      "anaerobic_te": 0.0,
-      "te_label": "AEROBIC_BASE",
-      "training_load": 158.74501037597656,
-      "stamina_start_pct": 99.0,
-      "stamina_end_pct": 67.0,
-      "body_battery_change": -18,
-      "vigorous_min": 90
     }
   ]
 }
