@@ -1,8 +1,26 @@
 {
-  "date": "2026-09-22",
-  "updated_at": "2026-09-23",
-  "sleep": null,
-  "hrv": null,
+  "date": "2026-09-23",
+  "updated_at": "2026-09-24",
+  "sleep": {
+    "total_hours": 8.8,
+    "deep_min": 59,
+    "rem_min": 56,
+    "light_min": 413,
+    "awake_min": 11,
+    "body_battery_change": 43,
+    "resting_hr": 50,
+    "avg_overnight_hrv": 58.0,
+    "sleep_score": 74
+  },
+  "hrv": {
+    "weekly_avg": 51,
+    "last_night_avg": 58,
+    "last_night_5min_high": 105,
+    "baseline_low": 55,
+    "baseline_high": 83,
+    "status": "UNBALANCED",
+    "feedback": "HRV_UNBALANCED_11"
+  },
   "strength": [
     {
       "date": "2026-08-19",
@@ -35,9 +53,34 @@
       "calories": 135.0
     }
   ],
-  "vo2max": 49.0,
+  "vo2max": 50.0,
   "body_battery_current": null,
   "garmin_runs": [
+    {
+      "date": "2026-09-23",
+      "name": "Warsaw - W23 Wed Taper Intervals - Race P",
+      "distance_km": 10.01,
+      "duration_min": 57.4,
+      "avg_hr": 136.0,
+      "max_hr": 156.0,
+      "calories": 529.0,
+      "steps": 10354,
+      "cadence_spm": 179,
+      "stride_length_cm": 95.17000122070313,
+      "vertical_oscillation_cm": 7.890000152587891,
+      "vertical_ratio_pct": 8.3,
+      "ground_contact_ms": 243,
+      "avg_power_w": 220.0,
+      "normalized_power_w": 220.0,
+      "aerobic_te": 3.799999952316284,
+      "anaerobic_te": 0.30000001192092896,
+      "te_label": "AEROBIC_BASE",
+      "training_load": 157.2333526611328,
+      "stamina_start_pct": 100.0,
+      "stamina_end_pct": 73.0,
+      "body_battery_change": -12,
+      "vigorous_min": 64
+    },
     {
       "date": "2026-09-13",
       "name": "Hakata Ward - W21 Sun Long Run - 23km Long Run",
@@ -262,31 +305,6 @@
       "stamina_end_pct": 17.0,
       "body_battery_change": -43,
       "vigorous_min": 229
-    },
-    {
-      "date": "2026-08-18",
-      "name": "County Dublin - W18 Tue Intervals - 1km Repeats",
-      "distance_km": 10.34,
-      "duration_min": 60.6,
-      "avg_hr": 145.0,
-      "max_hr": 177.0,
-      "calories": 573.0,
-      "steps": 10724,
-      "cadence_spm": 177,
-      "stride_length_cm": 95.07000122070313,
-      "vertical_oscillation_cm": 8.240000152587891,
-      "vertical_ratio_pct": 8.7,
-      "ground_contact_ms": 249,
-      "avg_power_w": 229.0,
-      "normalized_power_w": 235.0,
-      "aerobic_te": 4.199999809265137,
-      "anaerobic_te": 1.0,
-      "te_label": "LACTATE_THRESHOLD",
-      "training_load": 223.86814880371094,
-      "stamina_start_pct": 100.0,
-      "stamina_end_pct": 62.0,
-      "body_battery_change": -11,
-      "vigorous_min": 60
     }
   ]
 }
