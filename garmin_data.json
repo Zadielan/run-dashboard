@@ -1,8 +1,26 @@
 {
-  "date": "2026-09-26",
-  "updated_at": "2026-09-27",
-  "sleep": null,
-  "hrv": null,
+  "date": "2026-09-27",
+  "updated_at": "2026-09-28",
+  "sleep": {
+    "total_hours": 8.0,
+    "deep_min": 61,
+    "rem_min": 74,
+    "light_min": 345,
+    "awake_min": 6,
+    "body_battery_change": 51,
+    "resting_hr": 48,
+    "avg_overnight_hrv": 73.0,
+    "sleep_score": 82
+  },
+  "hrv": {
+    "weekly_avg": 56,
+    "last_night_avg": 73,
+    "last_night_5min_high": 117,
+    "baseline_low": 55,
+    "baseline_high": 82,
+    "status": "BALANCED",
+    "feedback": "HRV_BALANCED_4"
+  },
   "strength": [
     {
       "date": "2026-08-19",
@@ -38,6 +56,31 @@
   "vo2max": 50.0,
   "body_battery_current": null,
   "garmin_runs": [
+    {
+      "date": "2026-09-27",
+      "name": "Berlin - W23 Sun Race - BMW Berlin Marath",
+      "distance_km": 42.78,
+      "duration_min": 258.9,
+      "avg_hr": 154.0,
+      "max_hr": 173.0,
+      "calories": 2540.0,
+      "steps": 47850,
+      "cadence_spm": 185,
+      "stride_length_cm": 88.69000244140625,
+      "vertical_oscillation_cm": 7.490000152587891,
+      "vertical_ratio_pct": 8.4,
+      "ground_contact_ms": 244,
+      "avg_power_w": 215.0,
+      "normalized_power_w": 217.0,
+      "aerobic_te": 5.0,
+      "anaerobic_te": 1.5,
+      "te_label": "LACTATE_THRESHOLD",
+      "training_load": 590.400390625,
+      "stamina_start_pct": 99.0,
+      "stamina_end_pct": 1.0,
+      "body_battery_change": -41,
+      "vigorous_min": 255
+    },
     {
       "date": "2026-09-23",
       "name": "Warsaw - W23 Wed Taper Intervals - Race P",
@@ -262,31 +305,6 @@
       "stamina_end_pct": 70.0,
       "body_battery_change": -17,
       "vigorous_min": 95
-    },
-    {
-      "date": "2026-08-20",
-      "name": "County Dublin - W19 Thu Long Run - 34km Race Pra",
-      "distance_km": 34.01,
-      "duration_min": 217.9,
-      "avg_hr": 145.0,
-      "max_hr": 174.0,
-      "calories": 1981.0,
-      "steps": 39712,
-      "cadence_spm": 183,
-      "stride_length_cm": 84.80000000000001,
-      "vertical_oscillation_cm": 7.469999694824219,
-      "vertical_ratio_pct": 8.8,
-      "ground_contact_ms": 250,
-      "avg_power_w": 205.0,
-      "normalized_power_w": 207.0,
-      "aerobic_te": 5.0,
-      "anaerobic_te": 0.4000000059604645,
-      "te_label": "TEMPO",
-      "training_load": 405.5849609375,
-      "stamina_start_pct": 100.0,
-      "stamina_end_pct": 17.0,
-      "body_battery_change": -43,
-      "vigorous_min": 229
     }
   ]
 }
