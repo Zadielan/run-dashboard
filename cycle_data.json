@@ -788,5 +788,14 @@
     "nutrition_notes": null,
     "hrv": 79,
     "sleep_hours": 8.0
+  },
+  {
+    "date": "2026-10-03",
+    "cycle_day": 6,
+    "cycle_phase": "卵泡期",
+    "is_period_start": false,
+    "nutrition_notes": null,
+    "hrv": null,
+    "sleep_hours": null
   }
 ]
