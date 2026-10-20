@@ -1,21 +1,21 @@
 {
-  "date": "2026-10-18",
-  "updated_at": "2026-10-19",
+  "date": "2026-10-19",
+  "updated_at": "2026-10-20",
   "sleep": {
-    "total_hours": 9.0,
-    "deep_min": 37,
-    "rem_min": 115,
-    "light_min": 387,
-    "awake_min": 7,
-    "body_battery_change": 48,
-    "resting_hr": 47,
-    "avg_overnight_hrv": 74.0,
-    "sleep_score": 82
+    "total_hours": 7.5,
+    "deep_min": 80,
+    "rem_min": 64,
+    "light_min": 303,
+    "awake_min": 1,
+    "body_battery_change": 37,
+    "resting_hr": 52,
+    "avg_overnight_hrv": 61.0,
+    "sleep_score": 78
   },
   "hrv": {
-    "weekly_avg": 68,
-    "last_night_avg": 74,
-    "last_night_5min_high": 121,
+    "weekly_avg": 67,
+    "last_night_avg": 61,
+    "last_night_5min_high": 103,
     "baseline_low": 57,
     "baseline_high": 86,
     "status": "BALANCED",
@@ -53,9 +53,34 @@
       "calories": 135.0
     }
   ],
-  "vo2max": 48.0,
+  "vo2max": 49.0,
   "body_battery_current": null,
   "garmin_runs": [
+    {
+      "date": "2026-10-19",
+      "name": "County Dublin Running",
+      "distance_km": 9.16,
+      "duration_min": 56.7,
+      "avg_hr": 137.0,
+      "max_hr": 162.0,
+      "calories": 510.0,
+      "steps": 10286,
+      "cadence_spm": 182,
+      "stride_length_cm": 88.14000244140625,
+      "vertical_oscillation_cm": 7.659999847412109,
+      "vertical_ratio_pct": 8.7,
+      "ground_contact_ms": 248,
+      "avg_power_w": 216.0,
+      "normalized_power_w": 219.0,
+      "aerobic_te": 3.799999952316284,
+      "anaerobic_te": 0.0,
+      "te_label": "AEROBIC_BASE",
+      "training_load": 136.89215087890625,
+      "stamina_start_pct": 100.0,
+      "stamina_end_pct": 75.0,
+      "body_battery_change": -12,
+      "vigorous_min": 57
+    },
     {
       "date": "2026-10-16",
       "name": "County Dublin Running",
@@ -280,31 +305,6 @@
       "stamina_end_pct": 69.0,
       "body_battery_change": -18,
       "vigorous_min": 66
-    },
-    {
-      "date": "2026-08-31",
-      "name": "Nanning - W20 Mon Tempo - Tempo 2km Repeat",
-      "distance_km": 13.02,
-      "duration_min": 79.3,
-      "avg_hr": 143.0,
-      "max_hr": 165.0,
-      "calories": 726.0,
-      "steps": 14294,
-      "cadence_spm": 180,
-      "stride_length_cm": 90.17999877929688,
-      "vertical_oscillation_cm": 7.780000305175782,
-      "vertical_ratio_pct": 8.7,
-      "ground_contact_ms": 248,
-      "avg_power_w": 211.0,
-      "normalized_power_w": 214.0,
-      "aerobic_te": 4.5,
-      "anaerobic_te": 0.0,
-      "te_label": "TEMPO",
-      "training_load": 226.49942016601562,
-      "stamina_start_pct": 100.0,
-      "stamina_end_pct": 62.0,
-      "body_battery_change": -13,
-      "vigorous_min": 90
     }
   ]
 }
